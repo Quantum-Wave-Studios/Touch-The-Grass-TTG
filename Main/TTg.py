@@ -1,19 +1,36 @@
 import pygame
+import os
 
+# Define base directory paths
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+GRASS_IMG_PATH = os.path.join(BASE_DIR, "grass.png")
+GRASS1_IMG_PATH = os.path.join(BASE_DIR, "grass1.png")
+FONTS_DIR = os.path.join(os.path.dirname(BASE_DIR), "fonts")
+CUSTOM_FONT_PATH = os.path.join(FONTS_DIR, "PixelifySans-Regular.ttf")
+
+# Initialize pygame
 pygame.init()
 screen = pygame.display.set_mode((800, 600))
+clock = pygame.time.Clock()
 
 money = 0
 multipier = 1
 
-grass_img_original = pygame.image.load("grass1.png").convert_alpha()
-grass_img_original = pygame.transform.scale(grass_img_original, (grass_img_original.get_width() // 2.4, grass_img_original.get_height() // 2.4))  # Resmi ölçeklendir
+# Load images using organized paths
+# Örnek olarak grass1 görüntüsünü kullanıyoruz
+grass_img_original = pygame.image.load(GRASS1_IMG_PATH).convert_alpha()
+# Ölçeklendirme örneği
+original_width = grass_img_original.get_width()
+original_height = grass_img_original.get_height()
+grass_img_original = pygame.transform.scale(grass_img_original, (int(original_width / 2.4), int(original_height / 2.4)))
+
+# Load custom font if needed
+custom_font = pygame.font.Font(CUSTOM_FONT_PATH, 36)  # 36 yazı boyutu
 
 # Başlangıç boyutu ve dönüş açısı
 scale_factor = 1.0  # Ölçek faktörü (1.0 = orijinal boyut)
 rotation_angle = 0  # Resmin başlangıç dönüş açısı
 rotation_direction = 1  # Dönüş yönü (1: saat yönü, -1: ters yön)
-font = pygame.font.Font(None, 36)  # 'None' default font, 36 ise yazı boyutu
 # Ölçekleme yönü (1: büyüt, -1: küçült)
 scale_direction = 1
 # Ölçekleme limiti
@@ -23,21 +40,19 @@ min_scale = 0.9  # %90 (daha az küçültme)
 grass_rect = grass_img_original.get_rect()
 grass_rect.center = (400, 300)  # Ekranın ortası
 
-clock = pygame.time.Clock()
-
 running = True
 while running:
     screen.fill((0, 0, 0))  # Ekranı temizle
 
     # Ölçek faktörünü güncelle
-    scale_factor += scale_direction * 0.0054  # Daha yavaş büyüt/küçült (%1)
+    scale_factor += scale_direction * 0.0034  # Daha yavaş büyüt/küçült (%1)
 
     # Ölçek sınırlarını kontrol et
     if scale_factor >= max_scale or scale_factor <= min_scale:
         scale_direction *= -1  # Yönü tersine çevir
 
     # Dönüş açısını güncelle
-    rotation_angle += rotation_direction * 0.14  # Daha yavaş dönüş
+    rotation_angle += rotation_direction * 0.054  # Daha yavaş dönüş
     if abs(rotation_angle) >= 5:  # Maksimum sağa/sola dönüş açısı
         rotation_direction *= -1  # Dönüş yönünü tersine çevir
 
@@ -57,10 +72,10 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:  # Fare tıklama olayı
             if grass_rect.collidepoint(event.pos):  # Tıklama resim üzerinde mi?
                 money += 1 * multipier  # Para kazanma
-                print(money)
+                #print(money)
 
     # Her frame'in sonunda:
-    money_text = font.render("Money: " + str(money), True, (255, 255, 255))
+    money_text = custom_font.render("Money: " + str(money), True, (255, 255, 255))
     screen.blit(money_text, (10, 10))
 
     clock.tick(60)
