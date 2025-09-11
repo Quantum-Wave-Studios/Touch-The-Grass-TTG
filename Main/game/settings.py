@@ -8,8 +8,8 @@ SCREEN_SIZE = (800, 600)
 CENTER = (SCREEN_SIZE[0] // 2, SCREEN_SIZE[1] // 2)
 
 # Directories for assets
-IMAGES_DIR = os.path.join(PROJECT_ROOT, "Main")  # Assuming images are stored in the Main folder
-FONTS_DIR = os.path.join(PROJECT_ROOT, "fonts")
+IMAGES_DIR = os.path.join(PROJECT_ROOT, "assets/images")
+FONTS_DIR = os.path.join(PROJECT_ROOT, "assets/fonts")
 
 # Asset file paths
 CUSTOM_FONT_PATH = os.path.join(FONTS_DIR, "PixelifySans-Regular.ttf")
