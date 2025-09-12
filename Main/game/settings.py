@@ -1,7 +1,11 @@
 import os
+import pygame
 
 # Determine the project root (one directory above the 'game' folder)
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+
+
+
 
 # Screen settings
 SCREEN_SIZE = (800, 600)
