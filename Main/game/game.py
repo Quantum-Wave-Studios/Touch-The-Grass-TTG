@@ -16,7 +16,7 @@ def run_game():
     loaded_assets = assets.load_assets()
     
     # Set window caption and icon using loaded assets (if available)
-    pygame.display.set_caption("Touch The Grass")
+    pygame.display.set_caption("Touch The Grass   (Bet you can't touch it IRL!)")
     if 'icon' in loaded_assets:
         pygame.display.set_icon(loaded_assets['icon'])
     

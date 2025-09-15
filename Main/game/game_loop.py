@@ -3,19 +3,20 @@ import sys
 from .settings import SCREEN_SIZE, CENTER, MIN_SCALE, MAX_SCALE
 import os
 
+
 income = 0
 def run_loop(screen, clock, assets):
     """Ana oyun döngüsü. Ekranda animasyon ve para sayacını günceller."""
 
     money = 0
-    multipier = 1
+    multiplier = 1
 
     # Assets dictionary'den gerekli görselleri ve fontu al
     grass_img_original = assets['grass_img']
     custom_font = assets['custom_font']
-
-    # Buton ayarları (sağ üst köşe)
-    button_rect = pygame.Rect(SCREEN_SIZE[0] - 220, 20, 200, 50)
+    # Daha küçük font boyutu için yeni fontlar oluştur
+    medium_font = pygame.font.Font(pygame.font.match_font('arial'), 24)
+    small_font = pygame.font.Font(pygame.font.match_font('arial'), 20)
 
     # sesleri yükle ve çal
     pygame.mixer.music.load('Main/assets/sounds/back.mp3')
@@ -24,10 +25,10 @@ def run_loop(screen, clock, assets):
     click_effect = pygame.mixer.Sound("Main/assets/sounds/click.mp3")
     buy_effect = pygame.mixer.Sound("Main/assets/sounds/buy.mp3")
 
-
-    # AFK Income upgrade bilgileri
-    upgrade_cost = 15        # Başlangıç fiyatı
-    auto_income = 0.0        # Otomatik gelir (saniyede artan miktar)
+    # Yükseltme bilgileri
+    afk_upgrade_cost = 15        # AFK gelir yükseltme başlangıç fiyatı
+    multiplier_upgrade_cost = 10  # Çarpan yükseltme başlangıç fiyatı
+    auto_income = 0.0            # Otomatik gelir (saniyede artan miktar)
 
     # Başlangıç ayarları
     scale_factor = 1.0          # Orijinal boyutta başla
@@ -39,24 +40,65 @@ def run_loop(screen, clock, assets):
     grass_rect = grass_img_original.get_rect()
     grass_rect.center = CENTER
 
+    # Buton ayarları
+    afk_button_rect = pygame.Rect(0, 0, 0, 0)  # Başlangıçta boş, sonra güncellenecek
+    multiplier_button_rect = pygame.Rect(0, 0, 0, 0)  # Başlangıçta boş, sonra güncellenecek
+
+    # İstatistikler
+    total_clicks = 0
+    
+    # Renk tanımları
+    BACKGROUND_COLOR = (20, 38, 24)
+    TEXT_COLOR = (255, 255, 255)
+    BUTTON_BORDER_COLOR = (255, 255, 255)
+    AFK_BUTTON_COLOR = (30, 144, 255)  # Mavi
+    MULTIPLIER_BUTTON_COLOR = (50, 205, 50)  # Yeşil
+    MONEY_COLOR = (255, 215, 0)  # Altın rengi
+    STATS_COLOR = (200, 200, 200)  # Gri
+    
+    # Panel ayarları
+    stats_panel_rect = pygame.Rect(10, 10, 250, 180)
+    
     running = True
     while running:
         dt = clock.tick(60) / 1000.0  # Geçen süre (saniye)
         # Otomatik gelir eklemesi
         money += auto_income * dt
 
-        screen.fill((20, 38, 24))
+        screen.fill(BACKGROUND_COLOR)
         
-        # Buton çizimi: pixel art stili, metin boyutuna göre dinamik boyutlandırma
-        button_text = custom_font.render(f"AFK Money (${int(upgrade_cost)})", False, (255, 255, 255))
-        padding = 10
-        text_rect = button_text.get_rect()
-        button_rect = pygame.Rect(0, 0, text_rect.width + 2 * padding, text_rect.height + 2 * padding)
-        button_rect.topright = (SCREEN_SIZE[0] - 20, 20)
-        text_rect.center = button_rect.center
-        pygame.draw.rect(screen, (30, 144, 255), button_rect, border_radius=0)
-        pygame.draw.rect(screen, (255, 255, 255), button_rect, 2, border_radius=0)
-        screen.blit(button_text, text_rect)
+        # İstatistik paneli çizimi
+        pygame.draw.rect(screen, (40, 58, 44), stats_panel_rect, border_radius=5)
+        pygame.draw.rect(screen, (60, 78, 64), stats_panel_rect, 2, border_radius=5)
+        
+        # AFK Gelir butonu çizimi
+        afk_button_text = medium_font.render(f"AFK Income +0.5 (${int(afk_upgrade_cost)})", True, TEXT_COLOR)
+        padding = 12
+        afk_text_rect = afk_button_text.get_rect()
+        button_width = afk_text_rect.width + 2 * padding
+        button_height = afk_text_rect.height + 2 * padding
+        afk_button_rect = pygame.Rect(0, 0, button_width, button_height)
+        afk_button_rect.topright = (SCREEN_SIZE[0] - 20, 20)
+        afk_text_rect.center = afk_button_rect.center
+        
+        # Buton arka planı ve kenarları
+        pygame.draw.rect(screen, AFK_BUTTON_COLOR, afk_button_rect, border_radius=5)
+        pygame.draw.rect(screen, BUTTON_BORDER_COLOR, afk_button_rect, 2, border_radius=5)
+        screen.blit(afk_button_text, afk_text_rect)
+        
+        # Çarpan butonu çizimi
+        multiplier_button_text = medium_font.render(f"Click Power x{multiplier+1} (${int(multiplier_upgrade_cost)})", True, TEXT_COLOR)
+        multiplier_text_rect = multiplier_button_text.get_rect()
+        button_width = multiplier_text_rect.width + 2 * padding
+        button_height = multiplier_text_rect.height + 2 * padding
+        multiplier_button_rect = pygame.Rect(0, 0, button_width, button_height)
+        multiplier_button_rect.topright = (SCREEN_SIZE[0] - 20, afk_button_rect.bottom + 15)
+        multiplier_text_rect.center = multiplier_button_rect.center
+        
+        # Buton arka planı ve kenarları
+        pygame.draw.rect(screen, MULTIPLIER_BUTTON_COLOR, multiplier_button_rect, border_radius=5)
+        pygame.draw.rect(screen, BUTTON_BORDER_COLOR, multiplier_button_rect, 2, border_radius=5)
+        screen.blit(multiplier_button_text, multiplier_text_rect)
         
         # Ölçek faktörünü güncelle
         scale_factor += scale_direction * 0.0034  
@@ -77,13 +119,10 @@ def run_loop(screen, clock, assets):
         
         # === İMLEÇ KONTROLÜ ===
         mouse_pos = pygame.mouse.get_pos()
-        # === İMLEÇ KONTROLÜ ===
-        mouse_pos = pygame.mouse.get_pos()
-        if button_rect.collidepoint(mouse_pos) or grass_rect.collidepoint(mouse_pos):
+        if afk_button_rect.collidepoint(mouse_pos) or multiplier_button_rect.collidepoint(mouse_pos) or grass_rect.collidepoint(mouse_pos):
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)   # El işareti
         else:
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_ARROW)  # Normal ok
-
 
         # Resmi ekrana çiz
         screen.blit(rotated_img, grass_rect.topleft)
@@ -93,23 +132,51 @@ def run_loop(screen, clock, assets):
             if event.type == pygame.QUIT:
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
-                if button_rect.collidepoint(event.pos):
+                if afk_button_rect.collidepoint(event.pos):
                     pygame.mixer.Sound.set_volume(buy_effect, 0.0896705)
-                    if money >= upgrade_cost:
+                    if money >= afk_upgrade_cost:
                         buy_effect.play()
-                        money -= upgrade_cost
+                        money -= afk_upgrade_cost
                         auto_income += 0.5
-                        upgrade_cost *= 1.25
+                        afk_upgrade_cost *= 1.25
+                elif multiplier_button_rect.collidepoint(event.pos):
+                    pygame.mixer.Sound.set_volume(buy_effect, 0.0896705)
+                    if money >= multiplier_upgrade_cost:
+                        buy_effect.play()
+                        money -= multiplier_upgrade_cost
+                        multiplier += 1
+                        multiplier_upgrade_cost *= 1.5
                 elif grass_rect.collidepoint(event.pos):
                     pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
                     click_effect.play()
-                    money += 1 * multipier
+                    money += 1 * multiplier
+                    total_clicks += 1
 
-        # Para değerini ekrana yazdır
-        money_text = custom_font.render("Money: " + str(int(money)), True, (255, 255, 255))
-        income_text = custom_font.render("AFK Income: " + str(round(auto_income, 1)) + " $/s", True, (255, 255, 255))
-        screen.blit(income_text, (10, 50))
-        screen.blit(money_text, (10, 10))
+        # Para değerini ve diğer bilgileri ekrana yazdır
+        money_text = custom_font.render("$" + str(int(money)), True, MONEY_COLOR)
+        money_label = small_font.render("Money:", True, TEXT_COLOR)
+        
+        income_value = small_font.render(str(round(auto_income, 1)) + " $/s", True, MONEY_COLOR)
+        income_label = small_font.render("AFK Income:", True, TEXT_COLOR)
+        
+        multiplier_value = small_font.render("x" + str(multiplier), True, MULTIPLIER_BUTTON_COLOR)
+        multiplier_label = small_font.render("Click Power:", True, TEXT_COLOR)
+        
+        clicks_value = small_font.render(str(total_clicks), True, STATS_COLOR)
+        clicks_label = small_font.render("Total Clicks:", True, TEXT_COLOR)
+        
+        # İstatistik paneline bilgileri yerleştir
+        screen.blit(money_label, (stats_panel_rect.x + 15, stats_panel_rect.y + 15))
+        screen.blit(money_text, (stats_panel_rect.x + 15, stats_panel_rect.y + 40))
+        
+        screen.blit(income_label, (stats_panel_rect.x + 15, stats_panel_rect.y + 80))
+        screen.blit(income_value, (stats_panel_rect.x + 130, stats_panel_rect.y + 80))
+        
+        screen.blit(multiplier_label, (stats_panel_rect.x + 15, stats_panel_rect.y + 110))
+        screen.blit(multiplier_value, (stats_panel_rect.x + 130, stats_panel_rect.y + 110))
+        
+        screen.blit(clicks_label, (stats_panel_rect.x + 15, stats_panel_rect.y + 140))
+        screen.blit(clicks_value, (stats_panel_rect.x + 130, stats_panel_rect.y + 140))
 
         pygame.display.flip()
 
