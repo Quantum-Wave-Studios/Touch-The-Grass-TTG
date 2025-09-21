@@ -9,7 +9,7 @@ from .assets import resource_path
 
 income = 0
 def run_loop(screen, clock, assets):
-    """Ana oyun döngüsü. Ekranda animasyon ve para sayacını günceller."""
+    """Ana oyun döngüsü. Ekranda animasyon ve para sayacını günceller..."""
 
     # Oyun verilerini yükleme
     game_data = load_game_data()
