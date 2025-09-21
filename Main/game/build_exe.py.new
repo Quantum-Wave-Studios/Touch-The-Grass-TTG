@@ -1,0 +1,407 @@
+import osimport os
+
+import sysimport sys
+
+import globimport glob
+
+import pygameimport pygame
+
+import subprocessimport subprocess
+
+import shutilimport shutil
+
+from pathlib import Pathfrom pathlib import Path
+
+
+
+def get_project_paths():def get_project_paths():
+
+    """Get all the necessary project paths."""    """Get all the necessary project paths."""
+
+    # Get the path to this module    # Get the path to this module
+
+    module_dir = Path(__file__).parent.absolute()    module_dir = Path(__file__).parent.absolute()
+
+    project_root = module_dir.parent.parent    project_root = module_dir.parent.parent
+
+    main_dir = project_root / 'Main'    main_dir = project_root / 'Main'
+
+        
+
+    paths = {    paths = {
+
+        'project_root': str(project_root),        'project_root': str(project_root),
+
+        'main_dir': str(main_dir),        'main_dir': str(main_dir),
+
+        'game_dir': str(main_dir / 'game'),        'game_dir': str(main_dir / 'game'),
+
+        'dist_dir': str(project_root / 'dist'),        'dist_dir': str(project_root / 'dist'),
+
+        'build_dir': str(project_root / 'build'),        'build_dir': str(project_root / 'build'),
+
+        'assets_dir': str(main_dir / 'assets'),        'assets_dir': str(main_dir / 'assets'),
+
+        'main_script': str(main_dir / 'game' / '__main__.py'),        'main_script': str(main_dir / 'game' / '__main__.py'),
+
+        'icon_path': str(main_dir / 'assets' / 'images' / 'icon.png')        'icon_path': str(main_dir / 'assets' / 'images' / 'icon.png')
+
+    }    }
+
+    return paths    return paths
+
+
+
+def find_pygame_files():def find_pygame_files():
+
+    """Find all necessary pygame files."""    """Find all necessary pygame files."""
+
+    try:    try:
+
+        # Try to get the actual module file path        # Force pygame to initialize which helps with file paths
+
+        pygame_file = pygame.__file__        pygame.init()
+
+        if pygame_file is None:        
+
+            # Try an alternative method to find pygame        # Get the actual module file path
+
+            for path in sys.path:        pygame_file = pygame.__file__
+
+                pygame_dir = Path(path) / 'pygame'        if pygame_file is None:
+
+                if pygame_dir.exists() and pygame_dir.is_dir():            # Try an alternative method to find pygame
+
+                    pygame_file = str(pygame_dir / '__init__.py')            for path in sys.path:
+
+                    if Path(pygame_file).exists():                pygame_dir = Path(path) / 'pygame'
+
+                        break                if pygame_dir.exists() and pygame_dir.is_dir():
+
+                            pygame_file = str(pygame_dir / '__init__.py')
+
+        if pygame_file is not None:                    if Path(pygame_file).exists():
+
+            pygame_dir = Path(pygame_file).parent                        break
+
+            print(f"\nFound pygame directory at: {pygame_dir}")        
+
+                    if pygame_file is not None:
+
+            # Collect binary files            pygame_dir = Path(pygame_file).parent
+
+            binary_files = []            print(f"\nFound pygame directory at: {pygame_dir}")
+
+            data_files = []            
+
+                        # Collect binary files
+
+            # Find DLLs            binary_files = []
+
+            for subdir in ['', '_sdl2', 'threads']:            data_files = []
+
+                search_dir = pygame_dir / subdir            
+
+                if search_dir.exists():            # Find DLLs
+
+                    for dll_file in search_dir.glob('*.dll'):            for subdir in ['', '_sdl2', 'threads']:
+
+                        binary_files.append((str(dll_file), subdir or '.'))                search_dir = pygame_dir / subdir
+
+                            if search_dir.exists():
+
+            # Find data files                    for dll_file in search_dir.glob('*.dll'):
+
+            for data_file in ['freesansbold.ttf', 'pygame.ico']:                        binary_files.append((str(dll_file), subdir or '.'))
+
+                data_path = pygame_dir / data_file            
+
+                if data_path.exists():            # Find data files
+
+                    data_files.append((str(data_path), '.'))            for data_file in ['freesansbold.ttf', 'pygame.ico']:
+
+                                    data_path = pygame_dir / data_file
+
+            return binary_files, data_files                if data_path.exists():
+
+    except Exception as e:                    data_files.append((str(data_path), '.'))
+
+        print(f"\nWarning: Error finding pygame files: {e}")                    
+
+    return [], []            return binary_files, data_files
+
+    except Exception as e:
+
+def build_exe():        print(f"\nWarning: Error finding pygame files: {e}")
+
+    """Build a single executable file for Touch The Grass."""    return [], []
+
+    print("Touch The Grass - Single EXE Builder")
+
+    print("===================================")def build_exe():
+
+        """Build a single executable file for Touch The Grass."""
+
+    # Get project paths    print("Touch The Grass - Single EXE Builder")
+
+    paths = get_project_paths()    print("===================================")
+
+    
+
+    # Print configuration    # Get project paths
+
+    print("\nPaths configuration:")    paths = get_project_paths()
+
+    for key, path in paths.items():
+
+        print(f"{key}: {path}")    # Print configuration
+
+        if not os.path.exists(path):    print("\nPaths configuration:")
+
+            if key in ['dist_dir', 'build_dir']:    for key, path in paths.items():
+
+                print(f"Note: {key} will be created during build")        print(f"{key}: {path}")
+
+            else:        if not os.path.exists(path):
+
+                print(f"Warning: {key} does not exist!")            if key in ['dist_dir', 'build_dir']:
+
+                print(f"Note: {key} will be created during build")
+
+    # Clean previous builds            else:
+
+    for dir_to_clean in [paths['dist_dir'], paths['build_dir']]:                print(f"Warning: {key} does not exist!")
+
+        if os.path.exists(dir_to_clean):
+
+            shutil.rmtree(dir_to_clean)    # Clean previous builds
+
+            print(f"\nCleaned: {dir_to_clean}")    for dir_to_clean in [paths['dist_dir'], paths['build_dir']]:
+
+        if os.path.exists(dir_to_clean):
+
+    # Ensure PyInstaller is installed            shutil.rmtree(dir_to_clean)
+
+    try:            print(f"\nCleaned: {dir_to_clean}")
+
+        import PyInstaller
+
+    except ImportError:    # Ensure PyInstaller is installed
+
+        print("\nInstalling PyInstaller...")    try:
+
+        subprocess.check_call([sys.executable, "-m", "pip", "install", "pyinstaller"])        import PyInstaller
+
+    except ImportError:
+
+    # Prepare PyInstaller command        print("\nInstalling PyInstaller...")
+
+    sep = ";" if os.name == "nt" else ":"        subprocess.check_call([sys.executable, "-m", "pip", "install", "pyinstaller"])
+
+    add_data_arg = f"{paths['assets_dir']}{sep}assets"
+
+        # Prepare PyInstaller command
+
+    # Add the package directory to PYTHONPATH    sep = ";" if os.name == "nt" else ":"
+
+    os.environ['PYTHONPATH'] = os.pathsep.join([    add_data_arg = f"{paths['assets_dir']}{sep}assets"
+
+        paths['main_dir'],  # Add Main directory to allow 'game' package imports    
+
+        os.environ.get('PYTHONPATH', '')    # Add the package directory to PYTHONPATH
+
+    ])    os.environ['PYTHONPATH'] = os.pathsep.join([
+
+        paths['main_dir'],  # Add Main directory to allow 'game' package imports
+
+    # Base PyInstaller command        os.environ.get('PYTHONPATH', '')
+
+    cmd = [    ])
+
+        sys.executable,
+
+        "-m", "PyInstaller",    # First ensure pygame is installed
+
+        "--onefile",  # Create a single executable    try:
+
+        "--name", "TouchTheGrass",  # Enable console window for debugging        print("\nChecking pygame installation...")
+
+        "--clean",  # Clean build files before building        pygame_version = pygame.version.ver
+
+        "--icon", paths['icon_path'],        print(f"Found pygame version {pygame_version}")
+
+        "--add-data", add_data_arg,    except ImportError:
+
+        "--paths", paths['main_dir'],  # Add main_dir to Python path        print("\nWarning: Could not import pygame")
+
+        "--distpath", paths['dist_dir'],        print("Installing pygame...")
+
+        "--workpath", paths['build_dir']        subprocess.check_call([sys.executable, "-m", "pip", "install", "pygame"])
+
+    ]        import pygame
+
+        print("Pygame installed successfully")
+
+    # Add essential imports    
+
+    imports = [    # Base PyInstaller command
+
+        'pygame',    cmd = [
+
+        'game',        sys.executable,
+
+        'game.game',        "-m", "PyInstaller",
+
+        'game.game_loop',        "--onefile",  # Create a single executable
+
+        'game.settings',        "--noconsole",  # Don't show console window
+
+        'game.assets'        "--name", "TouchTheGrass",
+
+    ]        "--clean",  # Clean build files before building
+
+            "--icon", paths['icon_path'],
+
+    # Add pygame modules        "--add-data", add_data_arg,
+
+    pygame_modules = [        "--paths", paths['main_dir'],  # Add main_dir to Python path
+
+        'pygame.base',        "--distpath", paths['dist_dir'],
+
+        'pygame._sdl2',        "--workpath", paths['build_dir']
+
+        'pygame._sdl2.video',    ]
+
+        'pygame._sdl2.audio',
+
+        'pygame.constants',    # Add essential imports
+
+        'pygame.display',    imports = [
+
+        'pygame.draw',        'pygame',
+
+        'pygame.event',        'game',
+
+        'pygame.font',        'game.game',
+
+        'pygame.image',        'game.game_loop',
+
+        'pygame.key',        'game.settings',
+
+        'pygame.mixer',        'game.assets'
+
+        'pygame.mouse',    ]
+
+        'pygame.rect',    
+
+        'pygame.sprite',    # Add pygame modules
+
+        'pygame.surface',    pygame_modules = [
+
+        'pygame.time',        'pygame.base',
+
+        'pygame.transform'        'pygame._sdl2',
+
+    ]        'pygame._sdl2.video',
+
+    imports.extend(pygame_modules)        'pygame._sdl2.audio',
+
+            'pygame.constants',
+
+    # Add all imports        'pygame.display',
+
+    for module in imports:        'pygame.draw',
+
+        cmd.extend(["--hidden-import", module])        'pygame.event',
+
+        'pygame.font',
+
+    # Add pygame binaries and data files        'pygame.image',
+
+    binary_files, data_files = find_pygame_files()        'pygame.key',
+
+            'pygame.mixer',
+
+    # Add binaries        'pygame.mouse',
+
+    for file_path, dest in binary_files:        'pygame.rect',
+
+        cmd.extend(["--add-binary", f"{file_path};{dest}"])        'pygame.sprite',
+
+        print(f"Adding binary: {file_path} -> {dest}")        'pygame.surface',
+
+                'pygame.time',
+
+    # Add data files        'pygame.transform'
+
+    for file_path, dest in data_files:    ]
+
+        cmd.extend(["--add-data", f"{file_path};{dest}"])    imports.extend(pygame_modules)
+
+        print(f"Adding data file: {file_path} -> {dest}")    
+
+    # Add all imports
+
+    # Add the main script last    for module in imports:
+
+    cmd.append(paths['main_script'])        cmd.extend(["--hidden-import", module])
+
+
+
+    # Run build    # Add pygame binaries and data files
+
+    print("\nRunning PyInstaller with command:")    binary_files, data_files = find_pygame_files()
+
+    print(" ".join(cmd))    
+
+    print("\nBuilding executable...")    # Add binaries
+
+    for file_path, dest in binary_files:
+
+    try:        cmd.extend(["--add-binary", f"{file_path};{dest}"])
+
+        subprocess.run(cmd, check=True)        print(f"Adding binary: {file_path} -> {dest}")
+
+                
+
+        exe_path = Path(paths['dist_dir']) / "TouchTheGrass.exe"    # Add data files
+
+        if exe_path.exists():    for file_path, dest in data_files:
+
+            print(f"\nBuild completed successfully!")        cmd.extend(["--add-data", f"{file_path};{dest}"])
+
+            print(f"Executable can be found at: {exe_path}")        print(f"Adding data file: {file_path} -> {dest}")
+
+        else:
+
+            print("\nBuild completed but executable not found at expected location.")    # Add the main script last
+
+            print(f"Check the {paths['dist_dir']} directory for the output file.")    cmd.append(paths['main_script'])
+
+    except subprocess.CalledProcessError as e:
+
+        print(f"\nError during build: {e}")    # Run build
+
+        sys.exit(1)    print("\nRunning PyInstaller with command:")
+
+    print(" ".join(cmd))
+
+if __name__ == "__main__":    print("\nBuilding executable...")
+
+    build_exe()
+    try:
+        subprocess.run(cmd, check=True)
+        
+        exe_path = Path(paths['dist_dir']) / "TouchTheGrass.exe"
+        if exe_path.exists():
+            print(f"\nBuild completed successfully!")
+            print(f"Executable can be found at: {exe_path}")
+        else:
+            print("\nBuild completed but executable not found at expected location.")
+            print(f"Check the {paths['dist_dir']} directory for the output file.")
+    except subprocess.CalledProcessError as e:
+        print(f"\nError during build: {e}")
+        sys.exit(1)
+
+if __name__ == "__main__":
+    build_exe()

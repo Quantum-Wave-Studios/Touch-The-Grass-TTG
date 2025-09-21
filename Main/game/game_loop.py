@@ -2,7 +2,9 @@ import pygame
 import sys
 import json
 import os
-from .settings import SCREEN_SIZE, CENTER, MIN_SCALE, MAX_SCALE, CUSTOM_FONT_PATH, IMAGES_DIR
+from .settings import SCREEN_SIZE, CENTER, MIN_SCALE, MAX_SCALE
+from .paths import CUSTOM_FONT_PATH
+from .assets import resource_path
 
 
 income = 0
@@ -23,8 +25,9 @@ def run_loop(screen, clock, assets):
     # Assets dictionary'den gerekli görselleri ve fontu al
     grass_img_original = assets['grass_img']
     custom_font = assets['custom_font']
-    small_font = pygame.font.Font(CUSTOM_FONT_PATH, 18)  # Daha küçük fontlar kullan
-    medium_font = pygame.font.Font(CUSTOM_FONT_PATH, 22)  # Orta boyut
+    font_path = resource_path(CUSTOM_FONT_PATH)
+    small_font = pygame.font.Font(font_path, 18)  # Daha küçük fontlar kullan
+    medium_font = pygame.font.Font(font_path, 22)  # Orta boyut
 
     # Farklı çim görselleri
     grass_images = [grass_img_original]  # İlk görsel varsayılan
@@ -34,7 +37,7 @@ def run_loop(screen, clock, assets):
     # Ek çim görselleri yükle (eğer varsa)
     for i in range(1, 4):  # 3 ek çim görseli
         try:
-            img_path = os.path.join(IMAGES_DIR, f"grass{i+1}.png")
+            img_path = os.path.join("assets", "images", f"grass{i+1}.png")
             if os.path.exists(img_path):
                 img = pygame.image.load(img_path).convert_alpha()
                 # Orijinal çim ile aynı boyuta getir
@@ -67,8 +70,8 @@ def run_loop(screen, clock, assets):
     #pygame.mixer.music.load('Main\assets\sounds\back.mp3')
     #pygame.mixer.music.play(-1)  # Sonsuz döngüde çal
     pygame.mixer.music.set_volume(0.02896705)  # Ses seviyesini ayarla (0.0 - 1.0)
-    click_effect = pygame.mixer.Sound("Main/assets/sounds/click.mp3")
-    buy_effect = pygame.mixer.Sound("Main/assets/sounds/buy.mp3")
+    click_effect = pygame.mixer.Sound(resource_path("assets/sounds/click.mp3"))
+    buy_effect = pygame.mixer.Sound(resource_path("assets/sounds/buy.mp3"))
 
     # Başlangıç ayarları
     scale_factor = 1.0          # Orijinal boyutta başla
