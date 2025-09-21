@@ -27,6 +27,7 @@ def run_loop(screen, clock, assets):
     custom_font = assets['custom_font']
     font_path = resource_path(CUSTOM_FONT_PATH)
     small_font = pygame.font.Font(font_path, 18)  # Daha küçük fontlar kullan
+    extra_small_font = pygame.font.Font(font_path, 14)  # Extra küçük font
     medium_font = pygame.font.Font(font_path, 22)  # Orta boyut
 
     # Farklı çim görselleri
@@ -104,6 +105,11 @@ def run_loop(screen, clock, assets):
     
     # Panel ayarları - Daha geniş panel
     stats_panel_rect = pygame.Rect(10, 10, 280, 200)
+
+    
+    # Wipe Save butonu ayarları
+    wipe_button_rect = pygame.Rect(0, 0, 80, 30)  # Küçük buton
+    wipe_button_rect.bottomright = (SCREEN_SIZE[0] - 10, SCREEN_SIZE[1] - 10)  # Sağ alt köşe
     
     # İstatistik ekranı ve mağaza ekranı görünürlüğü
     show_stats = False
@@ -196,6 +202,16 @@ def run_loop(screen, clock, assets):
         pygame.draw.rect(screen, BUTTON_BORDER_COLOR, shop_button_rect, 2, border_radius=3)
         screen.blit(shop_button_text, shop_text_rect)
         
+        # Wipe Save butonu çizimi
+        wipe_button_text = extra_small_font.render("Wipe Save", True, TEXT_COLOR)
+        wipe_text_rect = wipe_button_text.get_rect()
+        wipe_text_rect.center = wipe_button_rect.center
+
+        # Wipe Save buton arka planı ve kenarları
+        pygame.draw.rect(screen, (200, 0, 0), wipe_button_rect, border_radius=3)  # Kırmızı renk
+        pygame.draw.rect(screen, BUTTON_BORDER_COLOR, wipe_button_rect, 2, border_radius=3)
+        screen.blit(wipe_button_text, wipe_text_rect)
+        
         # Ölçek faktörünü güncelle
         scale_factor += scale_direction * 0.0034  
         if scale_factor >= MAX_SCALE or scale_factor <= MIN_SCALE:
@@ -220,6 +236,7 @@ def run_loop(screen, clock, assets):
             save_button_rect.collidepoint(mouse_pos) or 
             stats_button_rect.collidepoint(mouse_pos) or 
             shop_button_rect.collidepoint(mouse_pos) or 
+            wipe_button_rect.collidepoint(mouse_pos) or 
             grass_rect.collidepoint(mouse_pos)):
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)   # El işareti
         else:
@@ -292,6 +309,21 @@ def run_loop(screen, clock, assets):
                     click_effect.play()
                     money += 1 * multiplier
                     total_clicks += 1
+                elif wipe_button_rect.collidepoint(event.pos):
+                    pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                    click_effect.play()
+                    if os.path.exists(os.path.join(os.getenv('LOCALAPPDATA'), "TouchTheGrass", "save_data.json")):
+                        os.remove(os.path.join(os.getenv('LOCALAPPDATA'), "TouchTheGrass", "save_data.json"))
+                        # Oyunu sıfırla
+                        money = 0
+                        multiplier = 1
+                        auto_income = 0.0
+                        total_clicks = 0
+                        afk_upgrade_cost = 15
+                        multiplier_upgrade_cost = 10
+                        highest_money = 0
+                        current_grass_index = 0
+                        active_grass_img = grass_images[current_grass_index]
 
         # Para değerini ve diğer bilgileri ekrana yazdır - Yazıların birbirinin içine girmesini önle
         money_text = custom_font.render("$" + str(int(money)), True, MONEY_COLOR)
@@ -480,7 +512,12 @@ def run_loop(screen, clock, assets):
 def save_game_data(data):
     """Oyun verilerini JSON formatında kaydeder."""
     try:
-        save_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "save_data.json")
+        # Windows'da AppData\Local altında bir klasör oluştur
+        app_data = os.path.join(os.getenv('LOCALAPPDATA'), "TouchTheGrass")
+        # Klasör yoksa oluştur
+        if not os.path.exists(app_data):
+            os.makedirs(app_data)
+        save_path = os.path.join(app_data, "save_data.json")
         with open(save_path, 'w') as f:
             json.dump(data, f)
         return True
@@ -492,7 +529,8 @@ def save_game_data(data):
 def load_game_data():
     """Kaydedilmiş oyun verilerini yükler, yoksa boş bir sözlük döndürür."""
     try:
-        save_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "save_data.json")
+        app_data = os.path.join(os.getenv('LOCALAPPDATA'), "TouchTheGrass")
+        save_path = os.path.join(app_data, "save_data.json")
         if os.path.exists(save_path):
             with open(save_path, 'r') as f:
                 return json.load(f)

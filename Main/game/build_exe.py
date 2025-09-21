@@ -45,9 +45,13 @@ def build_exe():
         sys.executable,
         "-m", "PyInstaller",
         "--onefile",
+        "--noconsole",  # Temporarily enable console for debugging
         "--name", "TouchTheGrass",
         "--clean",
-        "--debug", "all",  # Enable all debug options
+        # "--debug=all",
+        "--python-option", "v",  # Verbose Python output
+        "--hidden-import", "pkg_resources.py2_warn",
+        #"--debug", "all",  # Enable all debug options
         "--icon", paths["icon_path"],
         "--add-data", f"{paths['assets_dir']};assets",  # Assets directly in root
         "--paths", paths["main_dir"],
