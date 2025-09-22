@@ -129,8 +129,7 @@ dmypy.json
 # Cython debug symbols
 cython_debug/
 
-# VS Code settings
-.vscode/
+
 
 # Windows
 Thumbs.db

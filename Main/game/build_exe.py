@@ -22,8 +22,23 @@ def get_project_paths():
         "icon_path": str(main_dir / "assets" / "images" / "icon.png")
     }
 
+def get_build_type():
+    """Ask user for build type preference."""
+    while True:
+        print("\nSelect build type:")
+        print("1. Single file (--onefile)")
+        print("2. Directory with files (--onedir)")
+        choice = input("Enter your choice (1/2): ").strip()
+        
+        if choice == "1":
+            return "--onefile"
+        elif choice == "2":
+            return "--onedir"
+        else:
+            print("Invalid choice. Please enter 1 or 2.")
+
 def build_exe():
-    """Build a single executable file for Touch The Grass."""
+    """Build executable file for Touch The Grass."""
     try:
         import PyInstaller
     except ImportError:
@@ -36,6 +51,9 @@ def build_exe():
     for dir_path in [paths["dist_dir"], paths["build_dir"]]:
         if os.path.exists(dir_path):
             shutil.rmtree(dir_path)
+            
+    # Get build type from user
+    build_type = get_build_type()
     
     # Set up environment
     os.environ["PYTHONPATH"] = os.pathsep.join([paths["main_dir"], os.environ.get("PYTHONPATH", "")])
@@ -44,7 +62,7 @@ def build_exe():
     cmd = [
         sys.executable,
         "-m", "PyInstaller",
-        "--onefile",
+        build_type,  # Use selected build type
         "--noconsole",  # Temporarily enable console for debugging
         "--name", "TouchTheGrass",
         "--clean",

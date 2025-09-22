@@ -11,19 +11,24 @@ from .paths import (
 
 def resource_path(relative_path):
     """ Get absolute path to resource, works for dev and for PyInstaller """
-    try:
+    if hasattr(sys, '_MEIPASS'):
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
         print(f"Using _MEIPASS path: {base_path}")
-    except Exception:
+    else:
         # Get the directory containing the game package (Main directory)
         base_path = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-        print(f"Using fallback path: {base_path}")
+        print(f"Using development path: {base_path}")
     
     result = os.path.normpath(os.path.join(base_path, relative_path))
-    print(f"Resolved path for {relative_path}: {result}")
-    print(f"Path exists: {os.path.exists(result)}")
-    print(f"Directory contents: {os.listdir(os.path.dirname(result))}")
+    
+    if not os.path.exists(result):
+        print(f"Warning: Resource not found at {result}")
+        print(f"Current working directory: {os.getcwd()}")
+        print(f"Directory contents: {os.listdir(os.path.dirname(result))}")
+    else:
+        print(f"Resource found: {result}")
+    
     return result
 
 def load_assets():
