@@ -46,7 +46,7 @@ python Main/game/__main__.py
 
 ## 🛠️ Building from Source
 
-To create your own executable:
+To create your own executable (Not Recomended!):
 
 1. Install PyInstaller:
 ```bash
