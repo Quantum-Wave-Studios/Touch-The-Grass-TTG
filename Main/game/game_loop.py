@@ -35,30 +35,30 @@ def run_loop(screen, clock, assets):
     grass_costs = [0, 1000, 5000, 20000]  # Farklı çim görsellerinin fiyatları
     grass_names = ["Normal Grass", "Golden Grass", "Rainbow Grass", "Diamond Grass"]
     
-    # Ek çim görselleri yükle (eğer varsa)
-    for i in range(1, 4):  # 3 ek çim görseli
-        try:
-            img_path = os.path.join("assets", "images", f"grass{i+1}.png")
-            if os.path.exists(img_path):
-                img = pygame.image.load(img_path).convert_alpha()
-                # Orijinal çim ile aynı boyuta getir
-                img = pygame.transform.scale(img, (grass_img_original.get_width(), grass_img_original.get_height()))
-                grass_images.append(img)
-            else:
-                # Eğer dosya yoksa, orijinal çimin rengini değiştirerek yeni bir görsel oluştur
-                img = grass_img_original.copy()
-                if i == 1:  # Altın çim
-                    img = colorize(img, (255, 215, 0))
-                elif i == 2:  # Gökkuşağı çim (turkuaz tonu)
-                    img = colorize(img, (64, 224, 208))
-                elif i == 3:  # Elmas çim (açık mavi tonu)
-                    img = colorize(img, (135, 206, 250))
-                grass_images.append(img)
-        except Exception as e:
-            print(f"Çim görseli yüklenirken hata: {e}")
-            # Hata durumunda orijinal çimin rengini değiştirerek yeni bir görsel oluştur
-            img = grass_img_original.copy()
-            grass_images.append(img)
+    # Altın çim oluştur
+    golden_grass = grass_img_original.copy()
+    for x in range(golden_grass.get_width()):
+        for y in range(golden_grass.get_height()):
+            color = golden_grass.get_at((x, y))
+            if color.a != 0:  # Sadece görünür pikselleri işle
+                # Yeşil değerleri altın tonlarına dönüştür
+                green_value = color.g
+                new_color = pygame.Color(
+                    min(255, int(green_value * 1.2)),  # Kırmızı bileşeni artır
+                    min(255, int(green_value * 0.9)),  # Yeşil bileşeni biraz azalt
+                    min(255, int(green_value * 0.3))   # Mavi bileşeni azalt
+                )
+                golden_grass.set_at((x, y), new_color)
+    grass_images.append(golden_grass)
+    
+    # Gökkuşağı ve Elmas çimler için
+    for i in range(2, 4):
+        img = grass_img_original.copy()
+        if i == 2:  # Gökkuşağı çim (turkuaz tonu)
+            img = colorize(img, (64, 224, 208))
+        else:  # Elmas çim (açık mavi tonu)
+            img = colorize(img, (135, 206, 250))
+        grass_images.append(img)
 
     # Aktif çim görselini ayarla
     if current_grass_index < len(grass_images):
