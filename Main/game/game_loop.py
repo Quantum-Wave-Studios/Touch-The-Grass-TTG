@@ -32,8 +32,8 @@ def run_loop(screen, clock, assets):
 
     # Farklı çim görselleri
     grass_images = [grass_img_original]  # İlk görsel varsayılan
-    grass_costs = [0, 1000, 5000, 20000]  # Farklı çim görsellerinin fiyatları
-    grass_names = ["Normal Grass", "Golden Grass", "Rainbow Grass", "Diamond Grass"]
+    grass_costs = [0, 1000, 5000, 20000, 30000, 50000]  # Farklı çim görsellerinin fiyatları
+    grass_names = ["Normal Grass", "Golden Grass", "Rainbow Grass", "Diamond Grass", "Mystic Grass","Blackhole Grass" ]  # Çim isimleri
     
     # Altın çim oluştur
     golden_grass = grass_img_original.copy()

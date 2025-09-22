@@ -12,5 +12,5 @@ SOUNDS_DIR = os.path.join(ASSETS_DIR, "sounds")
 # Varlık dosyalarının yolları
 CUSTOM_FONT_PATH = os.path.join(FONTS_DIR, "PixelifySans-Regular.ttf")
 GRASS1_IMG_PATH = os.path.join(IMAGES_DIR, "grass1.png")
-ICON_PATH = os.path.join(IMAGES_DIR, "icon.png")
+ICON_PATH = os.path.join(IMAGES_DIR, "icon.ico")
 CLICK_SOUND_PATH = os.path.join(SOUNDS_DIR, "click.mp3")

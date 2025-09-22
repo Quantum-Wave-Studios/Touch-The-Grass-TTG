@@ -26,7 +26,7 @@ def resource_path(relative_path):
     print(f"Directory contents: {os.listdir(os.path.dirname(result))}")
     return result
 
-def create_golden_grass(grass_img):
+#   def create_golden_grass(grass_img):
     """Creates a golden version of the grass image."""
     golden_img = grass_img.copy()
     
@@ -63,7 +63,7 @@ def load_assets():
     assets['grass_img'] = grass_img
     
     # Altın çim versiyonunu oluştur
-    assets['golden_grass_img'] = create_golden_grass(grass_img)
+    # assets['golden_grass_img'] = create_golden_grass(grass_img)
     
     # Load custom font
     assets['custom_font'] = pygame.font.Font(resource_path(CUSTOM_FONT_PATH), 36)
