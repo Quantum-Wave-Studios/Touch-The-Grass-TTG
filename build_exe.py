@@ -22,6 +22,7 @@ def build_exe():
     PyInstaller.__main__.run([
         os.path.join(game_dir, "__main__.py"),
         "--name=TouchTheGrass",
+        "--noconsole",
         "--onefile" if onefile else "--onedir",
         f"--add-data={assets_dir}{os.pathsep}Assets",
         f"--add-data={game_dir}{os.pathsep}game",

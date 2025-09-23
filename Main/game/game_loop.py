@@ -83,6 +83,9 @@ def run_loop(screen, clock, assets):
                 diamond_grass.set_at((x, y), new_color)
     grass_images.append(diamond_grass)
 
+    # Gizemli çim oluştur
+
+
     # Aktif çim görselini ayarla
     if current_grass_index < len(grass_images):
         active_grass_img = grass_images[current_grass_index]
