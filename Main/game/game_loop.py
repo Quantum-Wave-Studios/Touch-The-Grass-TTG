@@ -33,7 +33,7 @@ def run_loop(screen, clock, assets):
     # Farklı çim görselleri
     grass_images = [grass_img_original]  # İlk görsel varsayılan
     grass_costs = [0, 1000, 5000, 20000, 30000, 50000]  # Farklı çim görsellerinin fiyatları
-    grass_names = ["Normal Grass", "Golden Grass", "Rainbow Grass", "Diamond Grass", "Mystic Grass","Blackhole Grass" ]  # Çim isimleri
+    grass_names = ["Normal Grass", "Golden Grass", "Frozen Grass", "Diamond Grass", "Mystic Grass","Blackhole Grass" ]  # Çim isimleri
     
     # Altın çim oluştur
     golden_grass = grass_img_original.copy()
@@ -50,15 +50,38 @@ def run_loop(screen, clock, assets):
                 )
                 golden_grass.set_at((x, y), new_color)
     grass_images.append(golden_grass)
-    
-    # Gökkuşağı ve Elmas çimler için
-    for i in range(2, 4):
-        img = grass_img_original.copy()
-        if i == 2:  # Gökkuşağı çim (turkuaz tonu)
-            img = colorize(img, (64, 224, 208))
-        else:  # Elmas çim (açık mavi tonu)
-            img = colorize(img, (135, 206, 250))
-        grass_images.append(img)
+
+    # Gökkuşağı çim oluştur
+    rainbow_grass = grass_img_original.copy()
+    for x in range(rainbow_grass.get_width()):
+        for y in range(rainbow_grass.get_height()):
+            color = rainbow_grass.get_at((x, y))
+            if color.a != 0:  # Sadece görünür pikselleri işle
+                # Yeşil değerleri gökkuşağı tonlarına dönüştür
+                green_value = color.g
+                new_color = pygame.Color(
+                    min(255, int(green_value * 0.3)),  # Kırmızı bileşeni artır
+                    min(255, int(green_value * 1.1)),  # Yeşil bileşeni biraz azalt
+                    min(255, int(green_value * 5))   # Mavi bileşeni azalt
+                )
+                rainbow_grass.set_at((x, y), new_color)
+    grass_images.append(rainbow_grass)
+
+    # Elmas çim oluştur
+    diamond_grass = grass_img_original.copy()
+    for x in range(diamond_grass.get_width()):
+        for y in range(diamond_grass.get_height()):
+            color = diamond_grass.get_at((x, y))
+            if color.a != 0:  # Sadece görünür pikselleri işle
+                # Yeşil değerleri elmas tonlarına dönüştür
+                green_value = color.g
+                new_color = pygame.Color(
+                    min(255, int(green_value * 0.1)),  # Kırmızı bileşeni artır
+                    min(255, int(green_value * 1)),  # Yeşil bileşeni biraz azalt
+                    min(255, int(green_value * 1.8))   # Mavi bileşeni azalt
+                )
+                diamond_grass.set_at((x, y), new_color)
+    grass_images.append(diamond_grass)
 
     # Aktif çim görselini ayarla
     if current_grass_index < len(grass_images):
@@ -307,8 +330,10 @@ def run_loop(screen, clock, assets):
                 elif grass_rect.collidepoint(event.pos):
                     pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
                     click_effect.play()
-                    money += 1 * multiplier
-                    total_clicks += 1
+                    if current_grass_index == 0:
+                        money += 1 * multiplier
+                    elif current_grass_index >= 1:
+                        money += 1 * multiplier * current_grass_index * 1.5
                 elif wipe_button_rect.collidepoint(event.pos):
                     pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
                     click_effect.play()
@@ -407,7 +432,7 @@ def run_loop(screen, clock, assets):
         
         # Mağaza ekranını göster - Pixel art tarzı için daha keskin kenarlar
         if show_shop:
-            shop_surface = pygame.Surface((500, 400))
+            shop_surface = pygame.Surface((500, 605))
             shop_surface.fill((30, 48, 34))
             shop_rect = shop_surface.get_rect(center=(SCREEN_SIZE[0] // 2, SCREEN_SIZE[1] // 2))
             
