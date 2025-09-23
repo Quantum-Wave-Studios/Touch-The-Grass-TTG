@@ -2,7 +2,8 @@
 /build\TouchTheGrass
 /build\TouchTheGrass.exe
 /build\TouchTheGrass.pdb
-/build
+/build/
+../build
 # Dependency directories
 /node_modules/
 /vendor/
