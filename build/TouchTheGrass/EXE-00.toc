@@ -1,5 +1,5 @@
 ('C:\\Users\\tarik\\Documents\\PY\\Touch-The-Grass-TTG\\build\\TouchTheGrass\\TouchTheGrass.exe',
- True,
+ False,
  False,
  True,
  ['C:\\Users\\tarik\\Documents\\PY\\Touch-The-Grass-TTG\\Main\\Assets\\images\\icon.ico'],
@@ -70,9 +70,9 @@
  [],
  False,
  False,
- 1758641632,
- [('run.exe',
-   'C:\\Users\\tarik\\Documents\\PY\\Touch-The-Grass-TTG\\.venv\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\run.exe',
+ 1758652057,
+ [('runw.exe',
+   'C:\\Users\\tarik\\Documents\\PY\\Touch-The-Grass-TTG\\.venv\\Lib\\site-packages\\PyInstaller\\bootloader\\Windows-64bit-intel\\runw.exe',
    'EXECUTABLE')],
  'C:\\Program '
  'Files\\WindowsApps\\PythonSoftwareFoundation.Python.3.13_3.13.2032.0_x64__qbz5n2kfra8p0\\python313.dll')

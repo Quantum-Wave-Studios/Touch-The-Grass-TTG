@@ -84,7 +84,37 @@ def run_loop(screen, clock, assets):
     grass_images.append(diamond_grass)
 
     # Gizemli çim oluştur
-
+    # Mystic Grass oluştur
+    mystic_grass = grass_img_original.copy()
+    for x in range(mystic_grass.get_width()):
+        for y in range(mystic_grass.get_height()):
+            color = mystic_grass.get_at((x, y))
+            if color.a != 0:  # Sadece görünür pikselleri işle
+                # Yeşil değerleri gizemli tonlara dönüştür
+                green_value = color.g
+                new_color = pygame.Color(
+                    min(255, int(green_value * 0.5)),  # Kırmızı bileşeni azalt
+                    min(255, int(green_value * 0.2)),  # Yeşil bileşeni azalt
+                    min(255, int(green_value * 1.5))   # Mavi bileşeni artır
+                )
+                mystic_grass.set_at((x, y), new_color)
+    grass_images.append(mystic_grass)
+    
+    # Blackhole Grass oluştur
+    blackhole_grass = grass_img_original.copy()
+    for x in range(blackhole_grass.get_width()):
+        for y in range(blackhole_grass.get_height()):
+            color = blackhole_grass.get_at((x, y))
+            if color.a != 0:  # Sadece görünür pikselleri işle
+                # Yeşil değerleri siyah delik tonlarına dönüştür
+                green_value = color.g
+                new_color = pygame.Color(
+                    min(255, int(green_value * 0.1)),  # Kırmızı bileşeni azalt
+                    min(255, int(green_value * 0.1)),  # Yeşil bileşeni azalt
+                    min(255, int(green_value * 0.1))   # Mavi bileşeni azalt
+                )
+                blackhole_grass.set_at((x, y), new_color)
+    grass_images.append(blackhole_grass)
 
     # Aktif çim görselini ayarla
     if current_grass_index < len(grass_images):
