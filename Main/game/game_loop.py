@@ -158,8 +158,8 @@ def run_loop(screen, clock, assets):
         pygame.draw.rect(screen, (80, 98, 84), stats_panel_rect, 2, border_radius=3)
         
         # AFK Gelir butonu çizimi
-        afk_button_text = medium_font.render(f"AFK Income +0.5 (${int(afk_upgrade_cost)})", True, TEXT_COLOR)
-        padding = 10  # Daha az padding
+        afk_button_text = small_font.render(f"AFK Income +0.5 (${int(afk_upgrade_cost)})", True, TEXT_COLOR)
+        padding = 8  # Daha az padding
         afk_text_rect = afk_button_text.get_rect()
         button_width = afk_text_rect.width + 2 * padding
         button_height = afk_text_rect.height + 2 * padding
@@ -167,63 +167,59 @@ def run_loop(screen, clock, assets):
         afk_button_rect.topright = (SCREEN_SIZE[0] - 20, 20)
         afk_text_rect.center = afk_button_rect.center
         
-        # Buton arka planı ve kenarları - Pixel art tarzı için daha keskin kenarlar
+        multiplier_button_text = small_font.render(f"Click Power x{multiplier+1} (${int(multiplier_upgrade_cost)})", True, TEXT_COLOR)
+        multiplier_text_rect = multiplier_button_text.get_rect()
+        button_width = multiplier_text_rect.width + 2 * padding
+        button_height = multiplier_text_rect.height + 2 * padding
+        multiplier_button_rect = pygame.Rect(0, 0, button_width, button_height)
+        multiplier_button_rect.topright = (SCREEN_SIZE[0] - 20, afk_button_rect.bottom + 8)  # Daha az boşluk
+        multiplier_text_rect.center = multiplier_button_rect.center
+        
+        save_button_text = small_font.render("Save Game", True, TEXT_COLOR)
+        save_text_rect = save_button_text.get_rect()
+        button_width = save_text_rect.width + 2 * padding
+        button_height = save_text_rect.height + 2 * padding
+        save_button_rect = pygame.Rect(0, 0, button_width, button_height)
+        save_button_rect.topright = (SCREEN_SIZE[0] - 20, multiplier_button_rect.bottom + 8)  # Daha az boşluk
+        save_text_rect.center = save_button_rect.center
+        
+        stats_button_text = small_font.render("Statistics", True, TEXT_COLOR)
+        stats_text_rect = stats_button_text.get_rect()
+        button_width = stats_text_rect.width + 2 * padding
+        button_height = stats_text_rect.height + 2 * padding
+        stats_button_rect = pygame.Rect(0, 0, button_width, button_height)
+        stats_button_rect.topright = (SCREEN_SIZE[0] - 20, save_button_rect.bottom + 8)  # Daha az boşluk
+        stats_text_rect.center = stats_button_rect.center
+        
+        shop_button_text = small_font.render("Grass Shop", True, TEXT_COLOR)
+        shop_text_rect = shop_button_text.get_rect()
+        button_width = shop_text_rect.width + 2 * padding
+        button_height = shop_text_rect.height + 2 * padding
+        shop_button_rect = pygame.Rect(0, 0, button_width, button_height)
+        shop_button_rect.topright = (SCREEN_SIZE[0] - 20, stats_button_rect.bottom + 8)  # Daha az boşluk
+        shop_text_rect.center = shop_button_rect.center
+        
+        # Buton arka planı ve kenarları
         pygame.draw.rect(screen, AFK_BUTTON_COLOR, afk_button_rect, border_radius=3)
         pygame.draw.rect(screen, BUTTON_BORDER_COLOR, afk_button_rect, 2, border_radius=3)
         screen.blit(afk_button_text, afk_text_rect)
         
         # Çarpan butonu çizimi
-        multiplier_button_text = medium_font.render(f"Click Power x{multiplier+1} (${int(multiplier_upgrade_cost)})", True, TEXT_COLOR)
-        multiplier_text_rect = multiplier_button_text.get_rect()
-        button_width = multiplier_text_rect.width + 2 * padding
-        button_height = multiplier_text_rect.height + 2 * padding
-        multiplier_button_rect = pygame.Rect(0, 0, button_width, button_height)
-        multiplier_button_rect.topright = (SCREEN_SIZE[0] - 20, afk_button_rect.bottom + 10)  # Daha az boşluk
-        multiplier_text_rect.center = multiplier_button_rect.center
-        
-        # Buton arka planı ve kenarları
         pygame.draw.rect(screen, MULTIPLIER_BUTTON_COLOR, multiplier_button_rect, border_radius=3)
         pygame.draw.rect(screen, BUTTON_BORDER_COLOR, multiplier_button_rect, 2, border_radius=3)
         screen.blit(multiplier_button_text, multiplier_text_rect)
         
         # Kaydet butonu çizimi
-        save_button_text = medium_font.render("Save Game", True, TEXT_COLOR)
-        save_text_rect = save_button_text.get_rect()
-        button_width = save_text_rect.width + 2 * padding
-        button_height = save_text_rect.height + 2 * padding
-        save_button_rect = pygame.Rect(0, 0, button_width, button_height)
-        save_button_rect.topright = (SCREEN_SIZE[0] - 20, multiplier_button_rect.bottom + 10)  # Daha az boşluk
-        save_text_rect.center = save_button_rect.center
-        
-        # Buton arka planı ve kenarları
         pygame.draw.rect(screen, SAVE_BUTTON_COLOR, save_button_rect, border_radius=3)
         pygame.draw.rect(screen, BUTTON_BORDER_COLOR, save_button_rect, 2, border_radius=3)
         screen.blit(save_button_text, save_text_rect)
         
         # İstatistik butonu çizimi
-        stats_button_text = medium_font.render("Statistics", True, TEXT_COLOR)
-        stats_text_rect = stats_button_text.get_rect()
-        button_width = stats_text_rect.width + 2 * padding
-        button_height = stats_text_rect.height + 2 * padding
-        stats_button_rect = pygame.Rect(0, 0, button_width, button_height)
-        stats_button_rect.topright = (SCREEN_SIZE[0] - 20, save_button_rect.bottom + 10)  # Daha az boşluk
-        stats_text_rect.center = stats_button_rect.center
-        
-        # Buton arka planı ve kenarları
         pygame.draw.rect(screen, STATS_BUTTON_COLOR, stats_button_rect, border_radius=3)
         pygame.draw.rect(screen, BUTTON_BORDER_COLOR, stats_button_rect, 2, border_radius=3)
         screen.blit(stats_button_text, stats_text_rect)
         
         # Mağaza butonu çizimi
-        shop_button_text = medium_font.render("Grass Shop", True, TEXT_COLOR)
-        shop_text_rect = shop_button_text.get_rect()
-        button_width = shop_text_rect.width + 2 * padding
-        button_height = shop_text_rect.height + 2 * padding
-        shop_button_rect = pygame.Rect(0, 0, button_width, button_height)
-        shop_button_rect.topright = (SCREEN_SIZE[0] - 20, stats_button_rect.bottom + 10)  # Daha az boşluk
-        shop_text_rect.center = shop_button_rect.center
-        
-        # Buton arka planı ve kenarları
         pygame.draw.rect(screen, SHOP_BUTTON_COLOR, shop_button_rect, border_radius=3)
         pygame.draw.rect(screen, BUTTON_BORDER_COLOR, shop_button_rect, 2, border_radius=3)
         screen.blit(shop_button_text, shop_text_rect)
