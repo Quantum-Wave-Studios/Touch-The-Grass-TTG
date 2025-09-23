@@ -118,5 +118,5 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 ## ‼️Important
 
  
-⋅⋅⋅⋅* BugFix Will Happen every 21th or 22th day of every month
+- BugFix Will Happen every 21th or 22th day of every month
 
