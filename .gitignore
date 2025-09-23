@@ -1,2 +1,10 @@
 # Build directory
-/build/
+/build\TouchTheGrass
+/build\TouchTheGrass.exe
+/build\TouchTheGrass.pdb
+/build
+# Dependency directories
+/node_modules/
+/vendor/
+# Logs
+
