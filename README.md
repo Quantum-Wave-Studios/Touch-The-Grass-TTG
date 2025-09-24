@@ -1,4 +1,5 @@
-[Static Badge](https://img.shields.io/badge/Python-Green?style=plastic&logo=python&logoColor=green&logoSize=auto&label=PY&labelColor=blue)
+https://img.shields.io/badge/Python-Green?style=plastic&logo=python&logoColor=green&logoSize=auto&label=PY&labelColor=blue
+
 
 
 # Touch The Grass (TTG)

@@ -281,7 +281,7 @@ def run_loop(screen, clock, assets):
         rotated_img = pygame.transform.rotate(scaled_img, rotation_angle)
         grass_rect = rotated_img.get_rect(center=grass_rect.center)
         
-        # === İMLEÇ KONTROLÜ ===
+        # === İMLEÇ KONTROLÜ ===aaaaaaaa
         mouse_pos = pygame.mouse.get_pos()
         if (afk_button_rect.collidepoint(mouse_pos) or 
             multiplier_button_rect.collidepoint(mouse_pos) or 
