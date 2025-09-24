@@ -449,7 +449,7 @@ def run_loop(screen, clock, assets):
             # Kapat butonuna tıklama kontrolü
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if stats_rect.collidepoint(event.pos):
-                    # Kapat butonunun konumunu ana ekrana göre ayarla
+                    # Kapat butonunun konumunu ana ekrana göre ayarla.
                     adjusted_close_rect = close_rect.copy()
                     adjusted_close_rect.x += stats_rect.x
                     adjusted_close_rect.y += stats_rect.y
@@ -459,7 +459,7 @@ def run_loop(screen, clock, assets):
                         pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
                         click_effect.play()
         
-        # Mağaza ekranını göster - Pixel art tarzı için daha keskin kenarlar
+        # Mağaza ekranını göster - Pixel art tarzı için daha keskin kenarlar.
         if show_shop:
             shop_surface = pygame.Surface((500, 605))
             shop_surface.fill((30, 48, 34))

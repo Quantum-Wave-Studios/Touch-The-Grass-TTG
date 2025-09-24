@@ -1,3 +1,6 @@
+[Static Badge](https://img.shields.io/badge/Python-Green?style=plastic&logo=python&logoColor=green&logoSize=auto&label=PY&labelColor=blue)
+
+
 # Touch The Grass (TTG)
 
 A fun and engaging clicker game built with Python and Pygame where players can experience the joy of touching grass virtually!
@@ -14,6 +17,9 @@ Touch The Grass is a casual clicker game where players can click on grass to ear
 - Progress saving system
 - Multiple upgrade options
 - Clean and modern UI design
+
+
+
 
 ## 🚀 Installation
 
