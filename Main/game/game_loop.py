@@ -341,8 +341,12 @@ def run_loop(screen, clock, assets):
                     if money >= afk_upgrade_cost:
                         buy_effect.play()
                         money -= afk_upgrade_cost
-                        auto_income += 0.5
-                        afk_upgrade_cost *= 1.25
+                        if current_grass_index == 0:
+                            auto_income += 1 * multiplier
+                        elif current_grass_index >= 1:
+                            auto_income += 1 * multiplier * current_grass_index * 1.5
+                            afk_upgrade_cost *= 1.25
+
                 elif multiplier_button_rect.collidepoint(event.pos):
                     pygame.mixer.Sound.set_volume(buy_effect, 0.0896705)
                     if money >= multiplier_upgrade_cost:
@@ -413,8 +417,8 @@ def run_loop(screen, clock, assets):
         
         income_value = small_font.render(str(round(auto_income, 1)) + " $/s", True, MONEY_COLOR)
         income_label = small_font.render("AFK Income:", True, TEXT_COLOR)
-        
-        multiplier_value = small_font.render("x" + str(multiplier), True, MULTIPLIER_BUTTON_COLOR)
+
+        multiplier_value = small_font.render("x" + str(multiplier * current_grass_index + 1), True, MULTIPLIER_BUTTON_COLOR)
         multiplier_label = small_font.render("Click Power:", True, TEXT_COLOR)
         
         clicks_value = small_font.render(str(total_clicks), True, STATS_COLOR)
