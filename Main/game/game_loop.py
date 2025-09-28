@@ -2,15 +2,32 @@ import pygame
 import sys
 import json
 import os
+import random
+import time
 from .settings import SCREEN_SIZE, CENTER, MIN_SCALE, MAX_SCALE
 from .paths import CUSTOM_FONT_PATH
 from .assets import resource_path
+
+
+
+
+
+
+
+
+
 
 
 income = 0
 def run_loop(screen, clock, assets):
     """Ana oyun döngüsü. Ekranda animasyon ve para sayacını günceller."""
 
+
+    random_weather_change = random.randint(1,3)
+    weather_multiplier = 1.0
+
+
+    
     # Oyun verilerini yükleme
     game_data = load_game_data()
     money = game_data.get('money', 0)
@@ -129,6 +146,7 @@ def run_loop(screen, clock, assets):
     #pygame.mixer.music.play(-1)  # Sonsuz döngüde çal
     pygame.mixer.music.set_volume(0.02896705)  # Ses seviyesini ayarla (0.0 - 1.0)
     click_effect = pygame.mixer.Sound(resource_path("assets/sounds/click.mp3"))
+    weather_change_effect = pygame.mixer.Sound(resource_path("assets/sounds/change.mp3"))
     buy_effect = pygame.mixer.Sound(resource_path("assets/sounds/buy.mp3"))
 
 
@@ -180,7 +198,7 @@ def run_loop(screen, clock, assets):
 
 
 
-    weather_panel_rect = pygame.Rect(10, 320, 180, 85)
+    weather_panel_rect = pygame.Rect(10, 360, 175, 40)
 
     
     # Wipe Save butonu ayarları
@@ -208,7 +226,7 @@ def run_loop(screen, clock, assets):
         pygame.draw.rect(screen, (40, 58, 44), stats_panel_rect, border_radius=3)
         pygame.draw.rect(screen, (80, 98, 84), stats_panel_rect, 2, border_radius=3)
 
-        pygame.draw.rect(screen, (40, 58, 44), weather_panel_rect, border_radius=3)
+        pygame.draw.rect(screen, (40, 58, 10), weather_panel_rect, border_radius=3)
         pygame.draw.rect(screen, (80, 98, 84), weather_panel_rect, 2, border_radius=3)
         
         # AFK Gelir butonu çizimi
@@ -254,11 +272,30 @@ def run_loop(screen, clock, assets):
         stats_button_rect.topright = (SCREEN_SIZE[0] - 20, save_button_rect.bottom + 8)  # Daha az boşluk
         stats_text_rect.center = stats_button_rect.center
 
+        weather_timer += dt
+        if weather_timer >= 50:
+            pygame.mixer.Sound.set_volume(weather_change_effect, 0.0696705)
+            weather_change_effect.play()
+            weather_timer = 0
+            random_weather_change = random.randint(0,7)
+            if random_weather_change == 3 or random_weather_change == 4 or random_weather_change == 5 :
+                weather_index = 1
+                weather_multiplier = 1.5
 
+            elif random_weather_change == 6 or random_weather_change == 7:
+                weather_index = 2
+                weather_multiplier = 1.75
 
+            elif random_weather_change == 8:
+                weather_index = 3
+                weather_multiplier = 2.0
 
+            elif random_weather_change == 0 or random_weather_change == 1 or random_weather_change == 2 :
+                weather_index = 0
+                weather_multiplier = 1.0
 
-
+                
+                
 
 
         shop_button_text = small_font.render("Grass Shop", True, TEXT_COLOR)
@@ -368,9 +405,10 @@ def run_loop(screen, clock, assets):
                         money -= afk_upgrade_cost
                         if current_grass_index == 0:
                             auto_income += 1 * multiplier
+                            afk_upgrade_cost *= 1.50
                         elif current_grass_index >= 1:
                             auto_income += 1 * multiplier * current_grass_index * 1.5
-                            afk_upgrade_cost *= 1.25
+                            afk_upgrade_cost *= 1.50
 
                 elif multiplier_button_rect.collidepoint(event.pos):
                     pygame.mixer.Sound.set_volume(buy_effect, 0.0896705)
@@ -413,10 +451,10 @@ def run_loop(screen, clock, assets):
                     pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
                     click_effect.play()
                     if current_grass_index == 0:
-                        money += 1 * multiplier
+                        money += 1 * multiplier * weather_multiplier
                         total_clicks += 1
                     elif current_grass_index >= 1:
-                        money += 1 * multiplier * current_grass_index * 1.5
+                        money += 1 * multiplier * current_grass_index * 1.5 * weather_multiplier
                         total_clicks += 1
                 elif wipe_button_rect.collidepoint(event.pos):
                     pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
@@ -463,12 +501,33 @@ def run_loop(screen, clock, assets):
 
 
 
+
+
+                #pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                    #click_effect.play()
+
+
+
+
+        # Hava durumu değişikliği - Her 50 saniyede bir değiştir
+
+                
+
+
         #Hava Paneli
+        
+        if weather_index == 0:
+            weather_text = small_font.render("Weather: Normal", True, MONEY_COLOR)
 
 
-        weather_text = small_font.render("Weather: " + str(int(weather_index)), True, MONEY_COLOR)
+        if weather_index == 1:
+            weather_text = small_font.render("Weather: Sunny", True, MONEY_COLOR)
+        elif weather_index == 2:
+            weather_text = small_font.render("Weather: Rainy", True, MONEY_COLOR)
+        elif weather_index == 3:
+            weather_text = small_font.render("Weather: Stormy", True, MONEY_COLOR)
 
-        screen.blit(weather_text, (weather_panel_rect.x + 15, weather_panel_rect.y + 40))
+        screen.blit(weather_text, (weather_panel_rect.x + 13, weather_panel_rect.y + 9))
 
 
 
