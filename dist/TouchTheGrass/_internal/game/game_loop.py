@@ -9,7 +9,7 @@ from .assets import resource_path
 
 income = 0
 def run_loop(screen, clock, assets):
-    """Ana oyun döngüsü. Ekranda animasyon ve para sayacını günceller..."""
+    """Ana oyun döngüsü. Ekranda animasyon ve para sayacını günceller."""
 
     # Oyun verilerini yükleme
     game_data = load_game_data()
@@ -156,6 +156,7 @@ def run_loop(screen, clock, assets):
     SAVE_BUTTON_COLOR = (255, 165, 0)  # Turuncu
     STATS_BUTTON_COLOR = (138, 43, 226)  # Mor
     SHOP_BUTTON_COLOR = (255, 105, 180)  # Pembe
+    STORE_BUTTON_COLOR = (255, 20, 147)  # Deep Pink
     MONEY_COLOR = (255, 215, 0)  # Altın rengi
     STATS_COLOR = (200, 200, 200)  # Gri
     
@@ -170,6 +171,7 @@ def run_loop(screen, clock, assets):
     # İstatistik ekranı ve mağaza ekranı görünürlüğü
     show_stats = False
     show_shop = False
+    show_store = False
     
     running = True
     while running:
@@ -221,6 +223,20 @@ def run_loop(screen, clock, assets):
         stats_button_rect.topright = (SCREEN_SIZE[0] - 20, save_button_rect.bottom + 8)  # Daha az boşluk
         stats_text_rect.center = stats_button_rect.center
         
+        store_button_text = small_font.render("Store",True, TEXT_COLOR)
+        store_text_rect = store_button_text.get_rect()
+        button_width = store_text_rect.width + 2 * padding
+        button_height = store_text_rect.height + 2 * padding
+        store_button_rect = pygame.Rect(0, 0, button_width, button_height)
+        store_button_rect.topright = (SCREEN_SIZE[0] - 20, store_button_rect.bottom + 209)  # Daha az boşluk
+        store_text_rect.center = store_button_rect.center
+
+
+
+
+
+
+
         shop_button_text = small_font.render("Grass Shop", True, TEXT_COLOR)
         shop_text_rect = shop_button_text.get_rect()
         button_width = shop_text_rect.width + 2 * padding
@@ -253,11 +269,18 @@ def run_loop(screen, clock, assets):
         pygame.draw.rect(screen, SHOP_BUTTON_COLOR, shop_button_rect, border_radius=3)
         pygame.draw.rect(screen, BUTTON_BORDER_COLOR, shop_button_rect, 2, border_radius=3)
         screen.blit(shop_button_text, shop_text_rect)
-        
+
+
+        pygame.draw.rect(screen, STORE_BUTTON_COLOR, store_button_rect, border_radius=3)
+        pygame.draw.rect(screen, BUTTON_BORDER_COLOR, store_button_rect, 2, border_radius=3)
+        screen.blit(store_button_text, store_text_rect)
+
         # Wipe Save butonu çizimi
         wipe_button_text = extra_small_font.render("Wipe Save", True, TEXT_COLOR)
         wipe_text_rect = wipe_button_text.get_rect()
         wipe_text_rect.center = wipe_button_rect.center
+
+
 
         # Wipe Save buton arka planı ve kenarları
         pygame.draw.rect(screen, (200, 0, 0), wipe_button_rect, border_radius=3)  # Kırmızı renk
@@ -281,7 +304,7 @@ def run_loop(screen, clock, assets):
         rotated_img = pygame.transform.rotate(scaled_img, rotation_angle)
         grass_rect = rotated_img.get_rect(center=grass_rect.center)
         
-        # === İMLEÇ KONTROLÜ ===
+        # === İMLEÇ KONTROLÜ ===aaaaaaaa
         mouse_pos = pygame.mouse.get_pos()
         if (afk_button_rect.collidepoint(mouse_pos) or 
             multiplier_button_rect.collidepoint(mouse_pos) or 
@@ -318,8 +341,12 @@ def run_loop(screen, clock, assets):
                     if money >= afk_upgrade_cost:
                         buy_effect.play()
                         money -= afk_upgrade_cost
-                        auto_income += 0.5
-                        afk_upgrade_cost *= 1.25
+                        if current_grass_index == 0:
+                            auto_income += 1 * multiplier
+                        elif current_grass_index >= 1:
+                            auto_income += 1 * multiplier * current_grass_index * 1.5
+                            afk_upgrade_cost *= 1.25
+
                 elif multiplier_button_rect.collidepoint(event.pos):
                     pygame.mixer.Sound.set_volume(buy_effect, 0.0896705)
                     if money >= multiplier_upgrade_cost:
@@ -345,12 +372,17 @@ def run_loop(screen, clock, assets):
                     save_text = small_font.render("Game Saved!", True, (255, 255, 255))
                     screen.blit(save_text, (SCREEN_SIZE[0] // 2 - save_text.get_width() // 2, 10))
                     pygame.display.flip()
-                    pygame.time.wait(500)  # 0.5 saniye bekle
+                    pygame.time.wait(900)  # 0.9 saniye bekle
                 elif stats_button_rect.collidepoint(event.pos):
                     pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
                     click_effect.play()
                     show_stats = not show_stats  # İstatistik ekranını aç/kapat
                     show_shop = False  # Mağaza ekranını kapat
+                elif store_button_rect.collidepoint(event.pos):
+                    pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                    click_effect.play()
+                    show_store = not show_store  # Store ekranını aç/kapat
+                    show_stats = False  # İstatistik ekranını kapat
                 elif shop_button_rect.collidepoint(event.pos):
                     pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
                     click_effect.play()
@@ -385,8 +417,8 @@ def run_loop(screen, clock, assets):
         
         income_value = small_font.render(str(round(auto_income, 1)) + " $/s", True, MONEY_COLOR)
         income_label = small_font.render("AFK Income:", True, TEXT_COLOR)
-        
-        multiplier_value = small_font.render("x" + str(multiplier), True, MULTIPLIER_BUTTON_COLOR)
+
+        multiplier_value = small_font.render("x" + str(multiplier * current_grass_index + 1), True, MULTIPLIER_BUTTON_COLOR)
         multiplier_label = small_font.render("Click Power:", True, TEXT_COLOR)
         
         clicks_value = small_font.render(str(total_clicks), True, STATS_COLOR)
@@ -404,6 +436,72 @@ def run_loop(screen, clock, assets):
         
         screen.blit(clicks_label, (stats_panel_rect.x + 15, stats_panel_rect.y + 140))
         screen.blit(clicks_value, (stats_panel_rect.x + 150, stats_panel_rect.y + 140))  # Daha fazla boşluk
+
+
+
+        if show_store:
+            store_surface = pygame.Surface((350, 150))
+            store_surface.fill((30, 48, 34))
+            store_rect = store_surface.get_rect(center=(SCREEN_SIZE[0] // 2, SCREEN_SIZE[1] // 2))
+
+            title_text = custom_font.render("Store Coming Soon!", True, TEXT_COLOR)
+            store_surface.blit(title_text, (store_surface.get_width() // 2 - title_text.get_width() // 2, store_surface.get_height() // 2 - title_text.get_height() // 2))
+
+            screen.blit(store_surface, store_rect.topleft)
+
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                if store_rect.collidepoint(event.pos):
+                    show_store = False
+                    pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                    click_effect.play()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
         # İstatistik ekranını göster - Pixel art tarzı için daha keskin kenarlar
         if show_stats:
@@ -449,7 +547,7 @@ def run_loop(screen, clock, assets):
             # Kapat butonuna tıklama kontrolü
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if stats_rect.collidepoint(event.pos):
-                    # Kapat butonunun konumunu ana ekrana göre ayarla
+                    # Kapat butonunun konumunu ana ekrana göre ayarla.
                     adjusted_close_rect = close_rect.copy()
                     adjusted_close_rect.x += stats_rect.x
                     adjusted_close_rect.y += stats_rect.y
@@ -459,7 +557,7 @@ def run_loop(screen, clock, assets):
                         pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
                         click_effect.play()
         
-        # Mağaza ekranını göster - Pixel art tarzı için daha keskin kenarlar
+        # Mağaza ekranını göster - Pixel art tarzı için daha keskin kenarlar.
         if show_shop:
             shop_surface = pygame.Surface((500, 605))
             shop_surface.fill((30, 48, 34))
