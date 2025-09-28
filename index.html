@@ -8,6 +8,12 @@
   <link rel="icon" type="image/png" href="assets/grass1.png" />
 </head>
 <body>
+  <!-- Loading Screen -->
+  <div id="loading-screen">
+    <div class="loader"></div>
+    <p>Loading Touch The Grass...</p>
+  </div>
+
   <!-- Navbar -->
   <header class="navbar">
     <div class="logo">
@@ -22,6 +28,11 @@
       </ul>
     </nav>
     <button id="theme-toggle">🌙</button>
+    <div class="burger">
+      <div></div>
+      <div></div>
+      <div></div>
+    </div>
   </header>
 
   <!-- Hero -->
@@ -29,9 +40,9 @@
     <div class="hero-content">
       <h1>🌱 Touch The Grass</h1>
       <p>Step away from the virtual world and touch some grass.  
-        A fun and humorous clicker game that reminds you of reality.
+         A fun and humorous clicker game that reminds you of reality.
       </p>
-      <a href="#download" class="btn">Download Game</a>
+      <a href="#download" class="btn pulse">Download Game</a>
     </div>
   </section>
 
@@ -40,8 +51,8 @@
     <h2>About the Game</h2>
     <p>
       Touch The Grass (TTG) is a funny clicker game developed by Quantum Wave Studios.  
-      Your goal is simple: click as much grass as possible and set new high scores.  
-      With a minimalist style and humorous concept, it’s a light-hearted experience.
+      Click as much grass as possible and set new high scores.  
+      Minimalist style with humorous concept.
     </p>
   </section>
 
@@ -75,6 +86,9 @@
     <a href="https://github.com/Quantum-Wave-Studios/Touch-The-Grass-TTG/releases"
        target="_blank" class="btn pulse">GitHub Releases</a>
   </section>
+
+  <!-- Scroll Progress Bar -->
+  <div id="progress-bar"></div>
 
   <!-- Footer -->
   <footer>
