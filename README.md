@@ -1,4 +1,10 @@
-https://img.shields.io/badge/Python-Green?style=plastic&logo=python&logoColor=green&logoSize=auto&label=PY&labelColor=blue
+___
+#### This Project is made by "**MrTarik2112**"(https://github.com/.MrTarik2112)
+
+##### Quantum Wave Studios is owned by "**MrTarik2112**".
+
+___
+
 
 
 
