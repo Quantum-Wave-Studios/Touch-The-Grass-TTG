@@ -1,5 +1,5 @@
 ___
-#### This Project is made by "**MrTarik2112**"(https://github.com/.MrTarik2112)
+#### This Project is made by "**MrTarik2112**" (https://github.com/MrTarik2112)
 
 ##### Quantum Wave Studios is owned by "**MrTarik2112**".
 
