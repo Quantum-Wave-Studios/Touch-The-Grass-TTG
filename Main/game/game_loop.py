@@ -183,6 +183,7 @@ def run_loop(screen, clock, assets):
     
     # Renk tanımları - Pixel art tarzı için daha canlı renkler
     BACKGROUND_COLOR = (20, 38, 24)
+    RAIN_BACKGROUND_COLOR = (20, 80, 186)
     TEXT_COLOR = (240, 240, 240)  # Daha parlak beyaz
     BUTTON_BORDER_COLOR = (255, 255, 255)
     AFK_BUTTON_COLOR = (30, 144, 255)  # Mavi
@@ -196,9 +197,9 @@ def run_loop(screen, clock, assets):
     # Panel ayarları - Daha geniş panel
     stats_panel_rect = pygame.Rect(10, 10, 280, 200)
 
+    CURRENT_BG = 0
 
-
-    weather_panel_rect = pygame.Rect(10, 360, 175, 40)
+    weather_panel_rect = pygame.Rect(10, 360, 180, 70)
 
     
     # Wipe Save butonu ayarları
@@ -272,6 +273,8 @@ def run_loop(screen, clock, assets):
         stats_button_rect.topright = (SCREEN_SIZE[0] - 20, save_button_rect.bottom + 8)  # Daha az boşluk
         stats_text_rect.center = stats_button_rect.center
 
+
+
         weather_timer += dt
         if weather_timer >= 50:
             pygame.mixer.Sound.set_volume(weather_change_effect, 0.0696705)
@@ -280,19 +283,19 @@ def run_loop(screen, clock, assets):
             random_weather_change = random.randint(0,7)
             if random_weather_change == 3 or random_weather_change == 4 or random_weather_change == 5 :
                 weather_index = 1
-                weather_multiplier = 1.5
-
+                weather_multiplier = 1.3
             elif random_weather_change == 6 or random_weather_change == 7:
                 weather_index = 2
-                weather_multiplier = 1.75
+                weather_multiplier = 1.5
 
             elif random_weather_change == 8:
                 weather_index = 3
-                weather_multiplier = 2.0
+                weather_multiplier = 1.90
 
             elif random_weather_change == 0 or random_weather_change == 1 or random_weather_change == 2 :
                 weather_index = 0
                 weather_multiplier = 1.0
+                
 
                 
                 
@@ -503,10 +506,6 @@ def run_loop(screen, clock, assets):
 
 
 
-                #pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
-                    #click_effect.play()
-
-
 
 
         # Hava durumu değişikliği - Her 50 saniyede bir değiştir
@@ -518,16 +517,19 @@ def run_loop(screen, clock, assets):
         
         if weather_index == 0:
             weather_text = small_font.render("Weather: Normal", True, MONEY_COLOR)
-
-
+            timer_text = small_font.render("Next Change: " + str(round(50 - weather_timer, 1)) + "s", True, TEXT_COLOR)
         if weather_index == 1:
             weather_text = small_font.render("Weather: Sunny", True, MONEY_COLOR)
+            timer_text = small_font.render("Next Change: " + str(round(50 - weather_timer, 1)) + "s", True, TEXT_COLOR)
         elif weather_index == 2:
             weather_text = small_font.render("Weather: Rainy", True, MONEY_COLOR)
+            timer_text = small_font.render("Next Change: " + str(round(50 - weather_timer, 1)) + "s", True, TEXT_COLOR)
         elif weather_index == 3:
             weather_text = small_font.render("Weather: Stormy", True, MONEY_COLOR)
+            timer_text = small_font.render("Next Change: " + str(round(50 - weather_timer, 1)) + "s", True, TEXT_COLOR)
 
-        screen.blit(weather_text, (weather_panel_rect.x + 13, weather_panel_rect.y + 9))
+        screen.blit(weather_text, (weather_panel_rect.x + 15, weather_panel_rect.y + 9))
+        screen.blit(timer_text, (weather_panel_rect.x + 6, weather_panel_rect.y + 43))
 
 
 
