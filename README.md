@@ -59,7 +59,7 @@ python Main/game/__main__.py
 
 ## 🛠️ Building from Source
 
-To create your own executable (Not Recomended!):
+To create your own executable (__You can do it but in main releases it is compiled.__)):
 
 1. Install PyInstaller:
 ```bash
@@ -79,14 +79,14 @@ The executable will be created in the `dist` folder.
 
 ## 🎯 How to Play
 
-1. Click on the grass to earn points
+1. Click on the __grass__ to earn points
 2. Use your points to purchase upgrades
 3. Keep clicking and upgrading to reach higher scores
 4. Your progress is automatically saved
 
 ## 🔧 Requirements
 
-- Python 3.8 or higher (if running from source)
+- Python 3.1 or higher (if running from source)
 - Pygame library (if running from source)
 - Windows OS (for executable version)
 
@@ -108,9 +108,6 @@ Touch-The-Grass-TTG/
 └── README.md
 ```
 
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## 📄 License
 
@@ -130,6 +127,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## ‼️Important
 
+- Save Feature Doesn't works on linux for now but i will fix it.
  
 - BugFix Will Happen every 21th or 22th day of every month.
 

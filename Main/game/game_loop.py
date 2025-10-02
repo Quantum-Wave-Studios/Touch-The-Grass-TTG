@@ -35,7 +35,7 @@ def run_loop(screen, clock, assets):
     auto_income = game_data.get('auto_income', 0.0)
     total_clicks = game_data.get('total_clicks', 0)
     afk_upgrade_cost = game_data.get('afk_upgrade_cost', 15)
-    multiplier_upgrade_cost = game_data.get('multiplier_upgrade_cost', 10)
+    multiplier_upgrade_cost = game_data.get('multiplier_upgrade_cost', 100)
     highest_money = game_data.get('highest_money', 0)
     current_grass_index = game_data.get('current_grass_index', 0)
     weather_index = game_data.get('weather_index', 0)
@@ -50,7 +50,7 @@ def run_loop(screen, clock, assets):
 
     # Farklı çim görselleri
     grass_images = [grass_img_original]  # İlk görsel varsayılan
-    grass_costs = [0, 1000, 5000, 20000, 30000, 50000]  # Farklı çim görsellerinin fiyatları
+    grass_costs = [0, 10000, 50000, 200000, 300000, 500000]  # Farklı çim görsellerinin fiyatları
     grass_names = ["Normal Grass", "Golden Grass", "Frozen Grass", "Diamond Grass", "Mystic Grass","Blackhole Grass" ]  # Çim isimleri
     
     # Altın çim oluştur
@@ -142,9 +142,9 @@ def run_loop(screen, clock, assets):
         current_grass_index = 0
 
     # sesleri yükle ve çal
-    #pygame.mixer.music.load('Main\assets\sounds\back.mp3')
-    #pygame.mixer.music.play(-1)  # Sonsuz döngüde çal
-    pygame.mixer.music.set_volume(0.02896705)  # Ses seviyesini ayarla (0.0 - 1.0)
+    pygame.mixer.music.load('Main/assets/sounds/back.mp3')
+    pygame.mixer.music.play(-1)  # Sonsuz döngüde çal
+    pygame.mixer.music.set_volume(0.01596705)  # Ses seviyesini ayarla (0.0 - 1.0)
     click_effect = pygame.mixer.Sound(resource_path("assets/sounds/click.mp3"))
     weather_change_effect = pygame.mixer.Sound(resource_path("assets/sounds/change.mp3"))
     buy_effect = pygame.mixer.Sound(resource_path("assets/sounds/buy.mp3"))
@@ -195,7 +195,7 @@ def run_loop(screen, clock, assets):
     STATS_COLOR = (200, 200, 200)  # Gri
     
     # Panel ayarları - Daha geniş panel
-    stats_panel_rect = pygame.Rect(10, 10, 280, 200)
+    stats_panel_rect = pygame.Rect(10, 10, 235, 182)
 
     CURRENT_BG = 0
 
@@ -227,8 +227,8 @@ def run_loop(screen, clock, assets):
         pygame.draw.rect(screen, (40, 58, 44), stats_panel_rect, border_radius=3)
         pygame.draw.rect(screen, (80, 98, 84), stats_panel_rect, 2, border_radius=3)
 
-        pygame.draw.rect(screen, (40, 58, 10), weather_panel_rect, border_radius=3)
-        pygame.draw.rect(screen, (80, 98, 84), weather_panel_rect, 2, border_radius=3)
+        pygame.draw.rect(screen, (35, 58, 23), weather_panel_rect, border_radius=3)
+        pygame.draw.rect(screen, (84, 98, 84), weather_panel_rect, 2, border_radius=3)
         
         # AFK Gelir butonu çizimi
         afk_button_text = small_font.render(f"AFK Income +0.5 (${int(afk_upgrade_cost)})", True, TEXT_COLOR)
@@ -352,12 +352,12 @@ def run_loop(screen, clock, assets):
         screen.blit(wipe_button_text, wipe_text_rect)
         
         # Ölçek faktörünü güncelle
-        scale_factor += scale_direction * 0.0034  
+        scale_factor += scale_direction * 0.0044  
         if scale_factor >= MAX_SCALE or scale_factor <= MIN_SCALE:
             scale_direction *= -1
         
         # Dönüş açısını güncelle
-        rotation_angle += rotation_direction * 0.054
+        rotation_angle += rotation_direction * 0.064
         if abs(rotation_angle) >= 5:
             rotation_direction *= -1
         
@@ -407,11 +407,11 @@ def run_loop(screen, clock, assets):
                         buy_effect.play()
                         money -= afk_upgrade_cost
                         if current_grass_index == 0:
-                            auto_income += 1 * multiplier
-                            afk_upgrade_cost *= 1.50
+                            auto_income += 0.5 * multiplier
+                            afk_upgrade_cost *= 1.7
                         elif current_grass_index >= 1:
-                            auto_income += 1 * multiplier * current_grass_index * 1.5
-                            afk_upgrade_cost *= 1.50
+                            auto_income += 0.5 * multiplier * current_grass_index * 1.5
+                            afk_upgrade_cost *= 1.7
 
                 elif multiplier_button_rect.collidepoint(event.pos):
                     pygame.mixer.Sound.set_volume(buy_effect, 0.0896705)
@@ -419,7 +419,7 @@ def run_loop(screen, clock, assets):
                         buy_effect.play()
                         money -= multiplier_upgrade_cost
                         multiplier += 1
-                        multiplier_upgrade_cost *= 1.5
+                        multiplier_upgrade_cost *= 1.7
                 elif save_button_rect.collidepoint(event.pos):
                     pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
                     click_effect.play()
@@ -439,7 +439,7 @@ def run_loop(screen, clock, assets):
                     save_text = small_font.render("Game Saved!", True, (255, 255, 255))
                     screen.blit(save_text, (SCREEN_SIZE[0] // 2 - save_text.get_width() // 2, 10))
                     pygame.display.flip()
-                    pygame.time.wait(600)  # 0.9 saniye bekle
+                    pygame.time.wait(350)  # 0.35 saniye bekle
                 elif stats_button_rect.collidepoint(event.pos):
                     pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
                     click_effect.play()
@@ -469,8 +469,8 @@ def run_loop(screen, clock, assets):
                         multiplier = 1
                         auto_income = 0.0
                         total_clicks = 0
-                        afk_upgrade_cost = 15
-                        multiplier_upgrade_cost = 10
+                        afk_upgrade_cost = 150
+                        multiplier_upgrade_cost = 100
                         highest_money = 0
                         current_grass_index = 0
                         active_grass_img = grass_images[current_grass_index]
@@ -567,6 +567,9 @@ def run_loop(screen, clock, assets):
             stats_surface = pygame.Surface((500, 400))
             stats_surface.fill((30, 48, 34))
             stats_rect = stats_surface.get_rect(center=(SCREEN_SIZE[0] // 2, SCREEN_SIZE[1] // 2))
+            pygame.draw.rect(stats_surface, (40, 58, 44), stats_surface.get_rect(), border_radius=3)
+            pygame.draw.rect(stats_surface, (80, 98, 84), stats_surface.get_rect(), 2, border_radius=3)
+            
             
             # İstatistik başlığı
             title_text = custom_font.render("Game Statistics", True, TEXT_COLOR)
@@ -603,6 +606,7 @@ def run_loop(screen, clock, assets):
             # İstatistik ekranını ana ekrana çiz
             screen.blit(stats_surface, stats_rect.topleft)
             
+            
             # Kapat butonuna tıklama kontrolü
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if stats_rect.collidepoint(event.pos):
@@ -621,7 +625,9 @@ def run_loop(screen, clock, assets):
             shop_surface = pygame.Surface((500, 605))
             shop_surface.fill((30, 48, 34))
             shop_rect = shop_surface.get_rect(center=(SCREEN_SIZE[0] // 2, SCREEN_SIZE[1] // 2))
-            
+            pygame.draw.rect(shop_surface, (40, 58, 44), shop_surface.get_rect(), border_radius=3)
+            pygame.draw.rect(shop_surface, (80, 98, 84), shop_surface.get_rect(), 2, border_radius=3)
+
             # Mağaza başlığı
             title_text = custom_font.render("Grass Shop", True, TEXT_COLOR)
             shop_surface.blit(title_text, (shop_surface.get_width() // 2 - title_text.get_width() // 2, 20))
