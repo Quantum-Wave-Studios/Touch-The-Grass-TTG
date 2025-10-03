@@ -5,8 +5,13 @@ import os
 import random
 import time
 from .settings import SCREEN_SIZE, CENTER, MIN_SCALE, MAX_SCALE
-from .paths import CUSTOM_FONT_PATH
+from .paths import (
+    CUSTOM_FONT_PATH,
+    CLICK_SOUND_PATH,
+    BACK_SOUND_PATH
+)
 from .assets import resource_path
+
 
 
 
@@ -34,8 +39,8 @@ def run_loop(screen, clock, assets):
     multiplier = game_data.get('multiplier', 1)
     auto_income = game_data.get('auto_income', 0.0)
     total_clicks = game_data.get('total_clicks', 0)
-    afk_upgrade_cost = game_data.get('afk_upgrade_cost', 15)
-    multiplier_upgrade_cost = game_data.get('multiplier_upgrade_cost', 100)
+    afk_upgrade_cost = game_data.get('afk_upgrade_cost', 150)
+    multiplier_upgrade_cost = game_data.get('multiplier_upgrade_cost', 150)
     highest_money = game_data.get('highest_money', 0)
     current_grass_index = game_data.get('current_grass_index', 0)
     weather_index = game_data.get('weather_index', 0)
@@ -142,7 +147,7 @@ def run_loop(screen, clock, assets):
         current_grass_index = 0
 
     # sesleri yükle ve çal
-    pygame.mixer.music.load('Main/assets/sounds/back.mp3')
+    pygame.mixer.music.load(resource_path(BACK_SOUND_PATH))
     pygame.mixer.music.play(-1)  # Sonsuz döngüde çal
     pygame.mixer.music.set_volume(0.01596705)  # Ses seviyesini ayarla (0.0 - 1.0)
     click_effect = pygame.mixer.Sound(resource_path("assets/sounds/click.mp3"))
@@ -183,11 +188,10 @@ def run_loop(screen, clock, assets):
     
     # Renk tanımları - Pixel art tarzı için daha canlı renkler
     BACKGROUND_COLOR = (20, 38, 24)
-    RAIN_BACKGROUND_COLOR = (20, 80, 186)
     TEXT_COLOR = (240, 240, 240)  # Daha parlak beyaz
     BUTTON_BORDER_COLOR = (255, 255, 255)
     AFK_BUTTON_COLOR = (30, 144, 255)  # Mavi
-    MULTIPLIER_BUTTON_COLOR = (50, 205, 50)  # Yeşil
+    MULTIPLIER_BUTTON_COLOR = (14, 176, 14)  # Yeşil
     SAVE_BUTTON_COLOR = (255, 165, 0)  # Turuncu
     STATS_BUTTON_COLOR = (138, 43, 226)  # Mor
     SHOP_BUTTON_COLOR = (255, 105, 180)  # Pembe
@@ -249,7 +253,7 @@ def run_loop(screen, clock, assets):
         deneme_text_rect.center = deneme_button_rect.center
 
         
-        multiplier_button_text = small_font.render(f"Click Power x{multiplier+1} (${int(multiplier_upgrade_cost)})", True, TEXT_COLOR)
+        multiplier_button_text = small_font.render(f"Click Power x{multiplier + 0.5} (${int(multiplier_upgrade_cost)})", True, TEXT_COLOR)
         multiplier_text_rect = multiplier_button_text.get_rect()
         button_width = multiplier_text_rect.width + 2 * padding
         button_height = multiplier_text_rect.height + 2 * padding
@@ -408,7 +412,7 @@ def run_loop(screen, clock, assets):
                         money -= afk_upgrade_cost
                         if current_grass_index == 0:
                             auto_income += 0.5 * multiplier
-                            afk_upgrade_cost *= 1.7
+                            afk_upgrade_cost *= 1.82
                         elif current_grass_index >= 1:
                             auto_income += 0.5 * multiplier * current_grass_index * 1.5
                             afk_upgrade_cost *= 1.7
@@ -418,8 +422,19 @@ def run_loop(screen, clock, assets):
                     if money >= multiplier_upgrade_cost:
                         buy_effect.play()
                         money -= multiplier_upgrade_cost
-                        multiplier += 1
-                        multiplier_upgrade_cost *= 1.7
+                        multiplier += 0.5
+                        multiplier_upgrade_cost *= 1.9
+                        multiplier_value = small_font.render("x " + str(multiplier), True, MULTIPLIER_BUTTON_COLOR)
+                        # Update stats_list to reflect new multiplier
+                        stats_list = [
+                            ("Total Clicks", str(total_clicks)),
+                            ("Highest Money", "$" + str(int(highest_money))),
+                            ("Current Money", "$" + str(int(money))),
+                            ("Click Power", "x " + str(multiplier)),
+                            ("AFK Income", str(round(auto_income, 1)) + " $/s"),
+                            ("AFK Upgrade Cost", "$" + str(int(afk_upgrade_cost))),
+                            ("Multiplier Upgrade Cost", "$" + str(int(multiplier_upgrade_cost)))
+                        ]
                 elif save_button_rect.collidepoint(event.pos):
                     pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
                     click_effect.play()
@@ -469,8 +484,8 @@ def run_loop(screen, clock, assets):
                         multiplier = 1
                         auto_income = 0.0
                         total_clicks = 0
-                        afk_upgrade_cost = 150
-                        multiplier_upgrade_cost = 100
+                        afk_upgrade_cost = 200
+                        multiplier_upgrade_cost = 150
                         highest_money = 0
                         current_grass_index = 0
                         active_grass_img = grass_images[current_grass_index]
@@ -482,7 +497,7 @@ def run_loop(screen, clock, assets):
         income_value = small_font.render(str(round(auto_income, 1)) + " $/s", True, MONEY_COLOR)
         income_label = small_font.render("AFK Income:", True, TEXT_COLOR)
 
-        multiplier_value = small_font.render("x" + str(multiplier * current_grass_index + 1), True, MULTIPLIER_BUTTON_COLOR)
+        multiplier_value = small_font.render("x " + str(multiplier), True, MULTIPLIER_BUTTON_COLOR)
         multiplier_label = small_font.render("Click Power:", True, TEXT_COLOR)
         
         clicks_value = small_font.render(str(total_clicks), True, STATS_COLOR)
@@ -583,7 +598,7 @@ def run_loop(screen, clock, assets):
                 ("Total Clicks", str(total_clicks)),
                 ("Highest Money", "$" + str(int(highest_money))),
                 ("Current Money", "$" + str(int(money))),
-                ("Click Power", "x" + str(multiplier)),
+                ("Click Power", "x" + str(float(multiplier))),
                 ("AFK Income", str(round(auto_income, 1)) + " $/s"),
                 ("AFK Upgrade Cost", "$" + str(int(afk_upgrade_cost))),
                 ("Multiplier Upgrade Cost", "$" + str(int(multiplier_upgrade_cost)))

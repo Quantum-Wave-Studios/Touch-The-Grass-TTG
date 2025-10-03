@@ -2,10 +2,10 @@
 
 
 a = Analysis(
-    ['c:\\Users\\tarik\\Documents\\PY\\Touch-The-Grass-TTG\\Main\\game\\__main__.py'],
+    ['C:\\Users\\tarik\\Documents\\PY\\Touch-The-Grass-TTG\\Main\\game\\__main__.py'],
     pathex=[],
     binaries=[],
-    datas=[('c:\\Users\\tarik\\Documents\\PY\\Touch-The-Grass-TTG\\Main\\Assets', 'Assets'), ('c:\\Users\\tarik\\Documents\\PY\\Touch-The-Grass-TTG\\Main\\game', 'game')],
+    datas=[('C:\\Users\\tarik\\Documents\\PY\\Touch-The-Grass-TTG\\Main\\Assets', 'Assets'), ('C:\\Users\\tarik\\Documents\\PY\\Touch-The-Grass-TTG\\Main\\game', 'game')],
     hiddenimports=['game'],
     hookspath=[],
     hooksconfig={},
