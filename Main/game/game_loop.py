@@ -280,7 +280,7 @@ def run_loop(screen, clock, assets):
 
 
         weather_timer += dt
-        if weather_timer >= 50:
+        if weather_timer >= 5:
             pygame.mixer.Sound.set_volume(weather_change_effect, 0.0696705)
             weather_change_effect.play()
             weather_timer = 0
@@ -415,7 +415,7 @@ def run_loop(screen, clock, assets):
                             afk_upgrade_cost *= 1.82
                         elif current_grass_index >= 1:
                             auto_income += 0.5 * multiplier * current_grass_index * 1.5
-                            afk_upgrade_cost *= 1.7
+                            afk_upgrade_cost *= 1.2
 
                 elif multiplier_button_rect.collidepoint(event.pos):
                     pygame.mixer.Sound.set_volume(buy_effect, 0.0896705)
@@ -423,7 +423,7 @@ def run_loop(screen, clock, assets):
                         buy_effect.play()
                         money -= multiplier_upgrade_cost
                         multiplier += 0.5
-                        multiplier_upgrade_cost *= 1.9
+                        multiplier_upgrade_cost *= 1.2
                         multiplier_value = small_font.render("x " + str(multiplier), True, MULTIPLIER_BUTTON_COLOR)
                         # Update stats_list to reflect new multiplier
                         stats_list = [
@@ -493,11 +493,11 @@ def run_loop(screen, clock, assets):
         # Para değerini ve diğer bilgileri ekrana yazdır - Yazıların birbirinin içine girmesini önle
         money_text = custom_font.render("$" + str(int(money)), True, MONEY_COLOR)
         money_label = small_font.render("Money:", True, TEXT_COLOR)
-        
-        income_value = small_font.render(str(round(auto_income, 1)) + " $/s", True, MONEY_COLOR)
+
+        income_value = small_font.render(str(round(auto_income * weather_multiplier, 3)) + " $/s", True, MONEY_COLOR)
         income_label = small_font.render("AFK Income:", True, TEXT_COLOR)
 
-        multiplier_value = small_font.render("x " + str(multiplier), True, MULTIPLIER_BUTTON_COLOR)
+        multiplier_value = small_font.render("x " + str(multiplier * weather_multiplier), True, MULTIPLIER_BUTTON_COLOR)
         multiplier_label = small_font.render("Click Power:", True, TEXT_COLOR)
         
         clicks_value = small_font.render(str(total_clicks), True, STATS_COLOR)
