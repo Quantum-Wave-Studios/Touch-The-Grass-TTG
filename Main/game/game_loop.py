@@ -17,6 +17,11 @@ def run_loop(screen, clock, assets):
 
     random_weather_change = random.randint(1, 3)
     weather_multiplier = 1.0
+    # Stat paneli animasyon değişkenleri
+    panel_open = False
+    panel_scale = 0
+    panel_speed = 0.1
+
 
     # Oyun verilerini yükleme
     game_data = load_game_data()
@@ -619,6 +624,11 @@ def run_loop(screen, clock, assets):
 
         screen.blit(weather_text, (weather_panel_rect.x + 15, weather_panel_rect.y + 9))
         screen.blit(timer_text, (weather_panel_rect.x + 6, weather_panel_rect.y + 43))
+
+        
+
+
+
 
         # İstatistik ekranını göster - Pixel art tarzı için daha keskin kenarlar
         if show_stats:

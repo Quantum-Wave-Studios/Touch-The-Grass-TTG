@@ -12,7 +12,4 @@ MIN_SCALE = 0.9
 MAX_SCALE = 1.2
 
 
-
-
-
 # Asset paths are now defined in paths.py
