@@ -287,7 +287,7 @@ def run_loop(screen, clock, assets):
         stats_text_rect.center = stats_button_rect.center
 
         weather_timer += dt
-        if weather_timer >= 5:
+        if weather_timer >= 2:
             pygame.mixer.Sound.set_volume(weather_change_effect, 0.0696705)
             weather_change_effect.play()
             weather_timer = 0
@@ -301,7 +301,7 @@ def run_loop(screen, clock, assets):
                 weather_multiplier = 1.3
             elif random_weather_change == 6 or random_weather_change == 7:
                 weather_index = 2
-                weather_multiplier = 1.5
+                weather_multiplier = 1.5    
 
             elif random_weather_change == 8:
                 weather_index = 3
@@ -551,7 +551,7 @@ def run_loop(screen, clock, assets):
         money_label = small_font.render("Money:", True, TEXT_COLOR)
 
         income_value = small_font.render(
-            str(round(auto_income * weather_multiplier, 3)) + " $/s", True, MONEY_COLOR
+            f"{auto_income * weather_multiplier:.2f} $/s", True, MONEY_COLOR
         )
         income_label = small_font.render("AFK Income:", True, TEXT_COLOR)
 
