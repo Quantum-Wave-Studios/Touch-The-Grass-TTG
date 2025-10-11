@@ -169,6 +169,11 @@ def run_loop(screen, clock, assets):
     rotation_direction = 1  # Dönüş yönü (1: saat yönü, -1: ters yön)
     scale_direction = 1  # Ölçek yönü (1: büyüt, -1: küçült)
 
+    sound_on_image = pygame.image.load("Main/Assets/images/musicOn.png").convert_alpha()
+    sound_off_image = pygame.image.load("Main/Assets/images/musicOff.png").convert_alpha()
+    sound_on_image = pygame.transform.scale(sound_on_image, (30, 30))
+    sound_off_image = pygame.transform.scale(sound_off_image, (30, 30))
+
     # Resmin konumunu belirle
     grass_rect = active_grass_img.get_rect()
     grass_rect.center = CENTER
@@ -227,6 +232,13 @@ def run_loop(screen, clock, assets):
         # İstatistik paneli çizimi - Pixel art tarzı için daha belirgin kenarlar
         pygame.draw.rect(screen, (40, 58, 44), stats_panel_rect, border_radius=3)
         pygame.draw.rect(screen, (80, 98, 84), stats_panel_rect, 2, border_radius=3)
+
+        sound_off_image.set_alpha(0)
+
+
+
+        screen.blit(sound_on_image, (SCREEN_SIZE[0] - 130, 560))
+        screen.blit(sound_off_image, (SCREEN_SIZE[0] - 130, 560))
 
         pygame.draw.rect(screen, (35, 58, 23), weather_panel_rect, border_radius=3)
         pygame.draw.rect(screen, (84, 98, 84), weather_panel_rect, 2, border_radius=3)
