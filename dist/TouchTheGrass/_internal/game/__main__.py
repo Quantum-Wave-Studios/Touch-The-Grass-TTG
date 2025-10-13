@@ -1,7 +1,7 @@
 import sys
 import os
 
-# PyInstaller ile çalışırken asset ve modül yolu
+
 if hasattr(sys, '_MEIPASS'):
     os.chdir(sys._MEIPASS)
 

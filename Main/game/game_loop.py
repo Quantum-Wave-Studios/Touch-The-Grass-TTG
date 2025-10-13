@@ -9,10 +9,17 @@ from .paths import CUSTOM_FONT_PATH, CLICK_SOUND_PATH, BACK_SOUND_PATH
 from .assets import resource_path
 
 
+
+
 income = 0
 
 
 def run_loop(screen, clock, assets):
+
+
+
+
+
     """Ana oyun döngüsü. Ekranda animasyon ve para sayacını günceller."""
 
     random_weather_change = random.randint(1, 3)
@@ -21,6 +28,23 @@ def run_loop(screen, clock, assets):
     panel_open = False
     panel_scale = 0
     panel_speed = 0.1
+
+
+
+    """Ses kontrolü için değişkenler"""
+
+    sound_on_image = pygame.image.load("Main/Assets/images/musicOn.png").convert_alpha()
+    sound_off_image = pygame.image.load("Main/Assets/images/musicOff.png").convert_alpha()
+    sound_on_image = pygame.transform.scale(sound_on_image, (30, 30))
+    sound_off_image = pygame.transform.scale(sound_off_image, (30, 30))
+    current_sound_state = "on"
+    sound_image = sound_on_image
+
+
+
+
+
+
 
 
     # Oyun verilerini yükleme
@@ -169,10 +193,7 @@ def run_loop(screen, clock, assets):
     rotation_direction = 1  # Dönüş yönü (1: saat yönü, -1: ters yön)
     scale_direction = 1  # Ölçek yönü (1: büyüt, -1: küçült)
 
-    sound_on_image = pygame.image.load("Main/Assets/images/musicOn.png").convert_alpha()
-    sound_off_image = pygame.image.load("Main/Assets/images/musicOff.png").convert_alpha()
-    sound_on_image = pygame.transform.scale(sound_on_image, (30, 30))
-    sound_off_image = pygame.transform.scale(sound_off_image, (30, 30))
+
 
     # Resmin konumunu belirle
     grass_rect = active_grass_img.get_rect()
@@ -233,12 +254,14 @@ def run_loop(screen, clock, assets):
         pygame.draw.rect(screen, (40, 58, 44), stats_panel_rect, border_radius=3)
         pygame.draw.rect(screen, (80, 98, 84), stats_panel_rect, 2, border_radius=3)
 
-        sound_off_image.set_alpha(0)
+        
+
+        ez = SCREEN_SIZE[0] - 132, 558, 35, 35
 
 
+        pygame.draw.rect(screen, (20, 38, 24), ez, border_radius=3)
 
-        screen.blit(sound_on_image, (SCREEN_SIZE[0] - 130, 560))
-        screen.blit(sound_off_image, (SCREEN_SIZE[0] - 130, 560))
+        screen.blit(sound_image, (SCREEN_SIZE[0] - 130, 560))
 
         pygame.draw.rect(screen, (35, 58, 23), weather_panel_rect, border_radius=3)
         pygame.draw.rect(screen, (84, 98, 84), weather_panel_rect, 2, border_radius=3)
@@ -304,7 +327,7 @@ def run_loop(screen, clock, assets):
         stats_text_rect.center = stats_button_rect.center
 
         weather_timer += dt
-        if weather_timer >= 2:
+        if weather_timer >= 50: #50 sn bekle
             pygame.mixer.Sound.set_volume(weather_change_effect, 0.0696705)
             weather_change_effect.play()
             weather_timer = 0
@@ -415,7 +438,9 @@ def run_loop(screen, clock, assets):
         rotated_img = pygame.transform.rotate(scaled_img, rotation_angle)
         grass_rect = rotated_img.get_rect(center=grass_rect.center)
 
-        # === İMLEÇ KONTROLÜ ===aaaaaaaa
+        sound_button = sound_image.get_rect(topleft=(SCREEN_SIZE[0] - 130, 560))
+
+        # === İMLEÇ KONTROLÜ === 
         mouse_pos = pygame.mouse.get_pos()
         if (
             afk_button_rect.collidepoint(mouse_pos)
@@ -425,6 +450,7 @@ def run_loop(screen, clock, assets):
             or shop_button_rect.collidepoint(mouse_pos)
             or wipe_button_rect.collidepoint(mouse_pos)
             or grass_rect.collidepoint(mouse_pos)
+            or sound_button.collidepoint(mouse_pos)
         ):
             pygame.mouse.set_cursor(pygame.SYSTEM_CURSOR_HAND)  # El işareti
         else:
@@ -453,9 +479,10 @@ def run_loop(screen, clock, assets):
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
                 if afk_button_rect.collidepoint(event.pos):
-                    pygame.mixer.Sound.set_volume(buy_effect, 0.0896705)
                     if money >= afk_upgrade_cost:
-                        buy_effect.play()
+                        if current_sound_state == "on":
+                            pygame.mixer.Sound.set_volume(buy_effect, 0.0896705)
+                            buy_effect.play()
                         money -= afk_upgrade_cost
                         if current_grass_index == 0:
                             auto_income += 0.5 * multiplier
@@ -464,10 +491,41 @@ def run_loop(screen, clock, assets):
                             auto_income += 0.5 * multiplier * current_grass_index * 1.5
                             afk_upgrade_cost *= 1.2
 
+
+
+                elif sound_button.collidepoint(event.pos):
+                    if current_sound_state == "on":
+                        # Müziği duraklat
+                        pygame.mixer.music.pause()
+                        # Tüm efekt seslerini kapat
+                        pygame.mixer.Sound.set_volume(click_effect, 0)
+                        pygame.mixer.Sound.set_volume(weather_change_effect, 0)
+                        pygame.mixer.Sound.set_volume(buy_effect, 0)
+                        current_sound_state = "off"
+                        sound_image = sound_off_image
+                        screen.blit(sound_image, (SCREEN_SIZE[0] - 130, 560))
+
+
+                    else:
+                        # Müziği devam ettir
+                        pygame.mixer.music.unpause()
+                        # Tüm efekt seslerini aç
+                        pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                        pygame.mixer.Sound.set_volume(weather_change_effect, 0.0696705)
+                        pygame.mixer.Sound.set_volume(buy_effect, 0.0896705)
+                        current_sound_state = "on"
+                        sound_image = sound_on_image
+                        screen.blit(sound_image, (SCREEN_SIZE[0] - 130, 560))
+
+
+
+
+
                 elif multiplier_button_rect.collidepoint(event.pos):
-                    pygame.mixer.Sound.set_volume(buy_effect, 0.0896705)
                     if money >= multiplier_upgrade_cost:
-                        buy_effect.play()
+                        if current_sound_state == "on":
+                            pygame.mixer.Sound.set_volume(buy_effect, 0.0896705)
+                            buy_effect.play()
                         money -= multiplier_upgrade_cost
                         multiplier += 0.5
                         multiplier_upgrade_cost *= 1.2
@@ -488,8 +546,9 @@ def run_loop(screen, clock, assets):
                             ),
                         ]
                 elif save_button_rect.collidepoint(event.pos):
-                    pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
-                    click_effect.play()
+                    if current_sound_state == "on":
+                        pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                        click_effect.play()
                     # Oyun verilerini kaydet
                     save_game_data(
                         {
@@ -513,18 +572,21 @@ def run_loop(screen, clock, assets):
                     pygame.display.flip()
                     pygame.time.wait(350)  # 0.35 saniye bekle
                 elif stats_button_rect.collidepoint(event.pos):
-                    pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
-                    click_effect.play()
+                    if current_sound_state == "on":
+                        pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                        click_effect.play()
                     show_stats = not show_stats  # İstatistik ekranını aç/kapat
                     show_shop = False  # Mağaza ekranını kapat
                 elif shop_button_rect.collidepoint(event.pos):
-                    pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
-                    click_effect.play()
+                    if current_sound_state == "on":
+                        pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                        click_effect.play()
                     show_shop = not show_shop  # Mağaza ekranını aç/kapat
                     show_stats = False  # İstatistik ekranını kapat
                 elif grass_rect.collidepoint(event.pos):
-                    pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
-                    click_effect.play()
+                    if current_sound_state == "on":
+                        pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                        click_effect.play()
                     if current_grass_index == 0:
                         money += 1 * multiplier * weather_multiplier
                         total_clicks += 1
@@ -538,8 +600,9 @@ def run_loop(screen, clock, assets):
                         )
                         total_clicks += 1
                 elif wipe_button_rect.collidepoint(event.pos):
-                    pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
-                    click_effect.play()
+                    if current_sound_state == "on":
+                        pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                        click_effect.play()
                     if os.path.exists(
                         os.path.join(
                             os.getenv("LOCALAPPDATA"), "TouchTheGrass", "save_data.json"

@@ -1,6 +1,6 @@
 package main
 
-// go run line_counter.go . <file_extension>
+// go run line_counter.go
 
 import (
 	"bufio"
