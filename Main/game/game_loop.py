@@ -33,8 +33,8 @@ def run_loop(screen, clock, assets):
 
     """Ses kontrolü için değişkenler"""
 
-    sound_on_image = pygame.image.load("Main/Assets/images/musicOn.png").convert_alpha()
-    sound_off_image = pygame.image.load("Main/Assets/images/musicOff.png").convert_alpha()
+    sound_on_image = pygame.image.load(resource_path("Assets/images/musicOn.png")).convert_alpha()
+    sound_off_image = pygame.image.load(resource_path("Assets/images/musicOff.png")).convert_alpha()
     sound_on_image = pygame.transform.scale(sound_on_image, (30, 30))
     sound_off_image = pygame.transform.scale(sound_off_image, (30, 30))
     current_sound_state = "on"
