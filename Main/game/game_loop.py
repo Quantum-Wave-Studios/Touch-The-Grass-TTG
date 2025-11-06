@@ -10,19 +10,62 @@ from .paths import CUSTOM_FONT_PATH, CLICK_SOUND_PATH, BACK_SOUND_PATH
 from .assets import resource_path
 
 
-
-
 income = 0
+
+
+# Safe audio helpers to avoid crashes on systems without a working audio backend
+def _safe_set_volume(sound_obj, vol):
+    try:
+        if sound_obj is not None:
+            pygame.mixer.Sound.set_volume(sound_obj, vol)
+    except Exception:
+        pass
+
+
+def _safe_play(sound_obj):
+    try:
+        if sound_obj is not None:
+            sound_obj.play()
+    except Exception:
+        pass
+
+
+def _safe_music_pause():
+    try:
+        pygame.mixer.music.pause()
+    except Exception:
+        pass
+
+
+def _safe_music_unpause():
+    try:
+        pygame.mixer.music.unpause()
+    except Exception:
+        pass
+
+# Monkey-patch pygame.mixer.Sound.set_volume to be safe (ignore None / backend errors)
+try:
+    _orig_set_volume = pygame.mixer.Sound.set_volume
+    def _wrapped_set_volume(sound_obj, vol):
+        try:
+            if sound_obj is not None:
+                _orig_set_volume(sound_obj, vol)
+        except Exception:
+            pass
+    pygame.mixer.Sound.set_volume = _wrapped_set_volume
+except Exception:
+    # if pygame or mixer not initialized, ignore
+    pass
 
 # Particle system global config and pool
 MAX_PARTICLES = 700
 _particle_pool = []  # list of recycled particle dicts
 
+
 # ensure draw_particles cache exists at module import-time
 def _ensure_particle_cache():
-    if not hasattr(draw_particles, 'cache'):
+    if not hasattr(draw_particles, "cache"):
         draw_particles.cache = {}
-
 
 
 def spawn_particles(particles_list, position, color, count=16):
@@ -36,20 +79,22 @@ def spawn_particles(particles_list, position, color, count=16):
             p = _particle_pool.pop()
         else:
             p = {}
-        angle = random.uniform(0, math.tau if hasattr(math, 'tau') else 2 * math.pi)
+        angle = random.uniform(0, math.tau if hasattr(math, "tau") else 2 * math.pi)
         speed = random.uniform(60, 220)
         vx = math.cos(angle) * speed
         vy = math.sin(angle) * speed
         lifetime = random.uniform(0.5, 1.2)
         radius = random.randint(2, 5)
-        p.update({
-            'pos': [float(position[0]), float(position[1])],
-            'vel': [vx, vy],
-            'life': lifetime,
-            'max_life': lifetime,
-            'color': color,
-            'r': radius,
-        })
+        p.update(
+            {
+                "pos": [float(position[0]), float(position[1])],
+                "vel": [vx, vy],
+                "life": lifetime,
+                "max_life": lifetime,
+                "color": color,
+                "r": radius,
+            }
+        )
         particles_list.append(p)
 
 
@@ -59,11 +104,11 @@ def update_particles(particles_list, dt):
     i = 0
     while i < len(particles_list):
         p = particles_list[i]
-        p['vel'][1] += g * dt
-        p['pos'][0] += p['vel'][0] * dt
-        p['pos'][1] += p['vel'][1] * dt
-        p['life'] -= dt
-        if p['life'] <= 0:
+        p["vel"][1] += g * dt
+        p["pos"][0] += p["vel"][0] * dt
+        p["pos"][1] += p["vel"][1] * dt
+        p["life"] -= dt
+        if p["life"] <= 0:
             # recycle into pool
             dead = particles_list.pop(i)
             # clear big list items to avoid holding refs
@@ -78,11 +123,11 @@ def draw_particles(surface, particles_list):
     _ensure_particle_cache()
     cache = draw_particles.cache
     for p in particles_list:
-        life_ratio = max(0.0, min(1.0, p['life'] / (p.get('max_life', 1.0) or 1.0)))
+        life_ratio = max(0.0, min(1.0, p["life"] / (p.get("max_life", 1.0) or 1.0)))
         alpha = int(255 * life_ratio)
         # soften size over life for nicer fade
-        r = max(1, int(p['r'] * (0.6 + 0.4 * life_ratio)))
-        color = p['color']
+        r = max(1, int(p["r"] * (0.6 + 0.4 * life_ratio)))
+        color = p["color"]
         # key: (r, r,g,b)
         color_key = (r, color[0], color[1], color[2])
 
@@ -96,12 +141,12 @@ def draw_particles(surface, particles_list):
         # create a lightweight copy to set alpha without expensive blit tinting
         draw_surf = base.copy()
         draw_surf.set_alpha(alpha)
-        surface.blit(draw_surf, (int(p['pos'][0] - r), int(p['pos'][1] - r)))
+        surface.blit(draw_surf, (int(p["pos"][0] - r), int(p["pos"][1] - r)))
 
 
 # create a cached background gradient to avoid per-frame fill calls
 def _get_bg_gradient(size):
-    if not hasattr(_get_bg_gradient, 'cache'):
+    if not hasattr(_get_bg_gradient, "cache"):
         _get_bg_gradient.cache = {}
     key = tuple(size)
     if key in _get_bg_gradient.cache:
@@ -122,7 +167,9 @@ def _get_bg_gradient(size):
     return surf
 
 
-def smooth_damp(current, target, current_velocity, smooth_time, dt, max_speed=float('inf')):
+def smooth_damp(
+    current, target, current_velocity, smooth_time, dt, max_speed=float("inf")
+):
     """SmoothDamp like Unity. Returns (new_position, new_velocity).
 
     smooth_time: roughly the time it takes to reach the target — larger = smoother/slower.
@@ -163,7 +210,18 @@ def smooth_damp(current, target, current_velocity, smooth_time, dt, max_speed=fl
 # global button states for hover/press animations
 button_states = {}
 
-def draw_button(surface, rect, bg_color, border_color, text, font, dt, effect_name=None, text_color=(255,255,255)):
+
+def draw_button(
+    surface,
+    rect,
+    bg_color,
+    border_color,
+    text,
+    font,
+    dt,
+    effect_name=None,
+    text_color=(255, 255, 255),
+):
     """Draw button with hover glow and press animation.
 
     effect_name: unique key for this button to retain animation state across frames
@@ -171,63 +229,87 @@ def draw_button(surface, rect, bg_color, border_color, text, font, dt, effect_na
     """
     # Initialize or fetch state. We'll use a spring-damper model for natural shake
     if effect_name:
-        state = button_states.setdefault(effect_name, {
-            'hover_val': 0.0,    # smoothed hover value
-            'hover_vel': 0.0,
-            'press': 0.0,    # press impulse (legacy)
-            'press_impulse': 0.0,
-            'scale': 1.0,
-            'scale_vel': 0.0,
-            'vel': 0.0,      # current horizontal velocity of shake
-            'pos': 0.0       # current horizontal offset
-        })
+        state = button_states.setdefault(
+            effect_name,
+            {
+                "hover_val": 0.0,  # smoothed hover value
+                "hover_vel": 0.0,
+                "press": 0.0,  # press impulse (legacy)
+                "press_impulse": 0.0,
+                "scale": 1.0,
+                "scale_vel": 0.0,
+                "vel": 0.0,  # current horizontal velocity of shake
+                "pos": 0.0,  # current horizontal offset
+            },
+        )
     else:
-        state = {'hover_val': 0.0, 'hover_vel': 0.0, 'press': 0.0, 'press_impulse': 0.0, 'scale':1.0, 'scale_vel':0.0, 'vel':0.0, 'pos':0.0}
+        state = {
+            "hover_val": 0.0,
+            "hover_vel": 0.0,
+            "press": 0.0,
+            "press_impulse": 0.0,
+            "scale": 1.0,
+            "scale_vel": 0.0,
+            "vel": 0.0,
+            "pos": 0.0,
+        }
 
     mouse_over = rect.collidepoint(pygame.mouse.get_pos())
     target = 1.0 if mouse_over else 0.0
     # smooth approach to hover using SmoothDamp for frame-rate independent smoothing
-    hover_cur = state.get('hover_val', 0.0)
-    hover_vel = state.get('hover_vel', 0.0)
+    hover_cur = state.get("hover_val", 0.0)
+    hover_vel = state.get("hover_vel", 0.0)
     hover_smooth_time = 0.06  # smaller = snappier, larger = smoother
-    new_hover, new_hover_vel = smooth_damp(hover_cur, target, hover_vel, hover_smooth_time, dt, max_speed=20.0)
-    state['hover_val'] = new_hover
-    state['hover_vel'] = new_hover_vel
+    new_hover, new_hover_vel = smooth_damp(
+        hover_cur, target, hover_vel, hover_smooth_time, dt, max_speed=20.0
+    )
+    state["hover_val"] = new_hover
+    state["hover_vel"] = new_hover_vel
 
     # Apply press decay
-    state['press'] = max(0.0, state.get('press', 0.0) - dt * 3.0)
+    state["press"] = max(0.0, state.get("press", 0.0) - dt * 3.0)
 
     # Use SmoothDamp for very smooth motion. position follows the smoothed hover value
-    desired_offset = 8.0 * state.get('hover_val', 0.0)  # pixels target
+    desired_offset = 8.0 * state.get("hover_val", 0.0)  # pixels target
     # slightly snappier position smoothing for responsive feel
     smooth_time = 0.055
-    cur = state.get('pos', 0.0)
-    cur_vel = state.get('vel', 0.0)
-    new_pos, new_vel = smooth_damp(cur, desired_offset, cur_vel, smooth_time, dt, max_speed=1500.0)
-    state['pos'] = new_pos
-    state['vel'] = new_vel
+    cur = state.get("pos", 0.0)
+    cur_vel = state.get("vel", 0.0)
+    new_pos, new_vel = smooth_damp(
+        cur, desired_offset, cur_vel, smooth_time, dt, max_speed=1500.0
+    )
+    state["pos"] = new_pos
+    state["vel"] = new_vel
 
     # press scale: small squash when pressed
-    press_scale = 1.0 - 0.045 * state['press']
+    press_scale = 1.0 - 0.045 * state["press"]
 
     # Draw scaled rect at its shaken position; do not draw twice (avoid ghosting)
     w, h = rect.width, rect.height
     sw, sh = int(w * press_scale), int(h * press_scale)
-    sx = rect.centerx - sw // 2 + int(round(state['pos']))
+    sx = rect.centerx - sw // 2 + int(round(state["pos"]))
     sy = rect.centery - sh // 2
     draw_rect = pygame.Rect(sx, sy, sw, sh)
 
     # Render base button once at base size and cache it. Minor per-frame scaling
     # (for press animation) will not bust the cache.
     base_w, base_h = rect.width, rect.height
-    if not hasattr(draw_button, 'button_cache'):
+    if not hasattr(draw_button, "button_cache"):
         draw_button.button_cache = {}
     cache_key = (text, id(font), base_w, base_h, bg_color, border_color, text_color)
     base_surf = draw_button.button_cache.get(cache_key)
     if base_surf is None:
         base_surf = pygame.Surface((base_w, base_h), pygame.SRCALPHA)
-        pygame.draw.rect(base_surf, bg_color, pygame.Rect(0, 0, base_w, base_h), border_radius=6)
-        pygame.draw.rect(base_surf, border_color, pygame.Rect(0, 0, base_w, base_h), 2, border_radius=6)
+        pygame.draw.rect(
+            base_surf, bg_color, pygame.Rect(0, 0, base_w, base_h), border_radius=6
+        )
+        pygame.draw.rect(
+            base_surf,
+            border_color,
+            pygame.Rect(0, 0, base_w, base_h),
+            2,
+            border_radius=6,
+        )
         text_surf = font.render(text, True, text_color)
         txt_rect = text_surf.get_rect(center=(base_w // 2, base_h // 2))
         base_surf.blit(text_surf, txt_rect)
@@ -235,20 +317,22 @@ def draw_button(surface, rect, bg_color, border_color, text, font, dt, effect_na
 
     # Handle press animation as a target scale using SmoothDamp for smoothness
     # press impulse decays quickly
-    press_impulse = state.get('press_impulse', 0.0)
+    press_impulse = state.get("press_impulse", 0.0)
     # If previous code set numeric 'press', map it to impulse (backcompat)
-    if state.get('press', 0.0) > 0 and press_impulse <= 0:
-        press_impulse = state.get('press', 0.0)
+    if state.get("press", 0.0) > 0 and press_impulse <= 0:
+        press_impulse = state.get("press", 0.0)
     # decay impulse
     press_impulse = max(0.0, press_impulse - dt * 6.0)
-    state['press_impulse'] = press_impulse
+    state["press_impulse"] = press_impulse
 
     target_scale = 1.0 - 0.06 * press_impulse
-    cur_scale = state.get('scale', 1.0)
-    cur_scale_vel = state.get('scale_vel', 0.0)
-    new_scale, new_scale_vel = smooth_damp(cur_scale, target_scale, cur_scale_vel, 0.08, dt, max_speed=8.0)
-    state['scale'] = new_scale
-    state['scale_vel'] = new_scale_vel
+    cur_scale = state.get("scale", 1.0)
+    cur_scale_vel = state.get("scale_vel", 0.0)
+    new_scale, new_scale_vel = smooth_damp(
+        cur_scale, target_scale, cur_scale_vel, 0.08, dt, max_speed=8.0
+    )
+    state["scale"] = new_scale
+    state["scale_vel"] = new_scale_vel
 
     # Compute final drawn size from smoothed scale
     sw, sh = max(1, int(base_w * new_scale)), max(1, int(base_h * new_scale))
@@ -276,44 +360,47 @@ def draw_button(surface, rect, bg_color, border_color, text, font, dt, effect_na
 def safe_load_sound(path, default_volume=0.08):
     try:
         s = pygame.mixer.Sound(resource_path(path))
-        pygame.mixer.Sound.set_volume(s, default_volume)
+        _safe_set_volume(s, default_volume)
         return s
     except Exception:
-        return None
+        # Return a dummy sound object with a no-op play() to avoid checks everywhere
+        class _DummySound:
+            def play(self, *a, **k):
+                return None
+
+        return _DummySound()
 
 
 def run_loop(screen, clock, assets):
-
-
-
-
-
     """Ana oyun döngüsü. Ekranda animasyon ve para sayacını günceller."""
 
     random_weather_change = random.randint(1, 3)
     weather_multiplier = 1.0
-    # Stat paneli animasyon değişkenleri
+    # Try to initialize music; on headless/Linux/Wine installs this may fail.
+    music_enabled = True
+    try:
+        try:
+            pygame.mixer.music.load(resource_path(BACK_SOUND_PATH))
+            pygame.mixer.music.play(-1)  # Sonsuz döngüde çal
+            pygame.mixer.music.set_volume(0.01596705)  # Ses seviyesini ayarla (0.0 - 1.0)
+        except Exception:
+            # Ignore music backend errors on platforms like Wine/Linux headless
+            pass
+    except Exception:
+        music_enabled = False
     panel_open = False
     panel_scale = 0
     panel_speed = 0.1
-
-
-
-    """Ses kontrolü için değişkenler"""
-
-    sound_on_image = pygame.image.load(resource_path("Assets/images/musicOn.png")).convert_alpha()
-    sound_off_image = pygame.image.load(resource_path("Assets/images/musicOff.png")).convert_alpha()
+    sound_on_image = pygame.image.load(
+        resource_path("Assets/images/musicOn.png")
+    ).convert_alpha()
+    sound_off_image = pygame.image.load(
+        resource_path("Assets/images/musicOff.png")
+    ).convert_alpha()
     sound_on_image = pygame.transform.scale(sound_on_image, (30, 30))
     sound_off_image = pygame.transform.scale(sound_off_image, (30, 30))
     current_sound_state = "on"
     sound_image = sound_on_image
-
-
-
-
-
-
-
 
     # Oyun verilerini yükleme
     game_data = load_game_data()
@@ -443,11 +530,16 @@ def run_loop(screen, clock, assets):
         current_grass_index = 0
 
     # sesleri yükle ve çal
-    pygame.mixer.music.load(resource_path(BACK_SOUND_PATH))
-    pygame.mixer.music.play(-1)  # Sonsuz döngüde çal
-    pygame.mixer.music.set_volume(0.01596705)  # Ses seviyesini ayarla (0.0 - 1.0)
+    try:
+        pygame.mixer.music.load(resource_path(BACK_SOUND_PATH))
+        pygame.mixer.music.play(-1)  # Sonsuz döngüde çal
+        pygame.mixer.music.set_volume(0.01596705)  # Ses seviyesini ayarla (0.0 - 1.0)
+    except Exception:
+        pass
     # use configured CLICK_SOUND_PATH constant when available
-    click_effect = safe_load_sound(CLICK_SOUND_PATH) or safe_load_sound("assets/sounds/click.mp3")
+    click_effect = safe_load_sound(CLICK_SOUND_PATH) or safe_load_sound(
+        "assets/sounds/click.mp3"
+    )
     weather_change_effect = safe_load_sound("assets/sounds/change.mp3")
     buy_effect = safe_load_sound("assets/sounds/buy.mp3")
 
@@ -459,8 +551,6 @@ def run_loop(screen, clock, assets):
     rotation_angle = 0  # Başlangıç dönüş açısı
     rotation_direction = 1  # Dönüş yönü (1: saat yönü, -1: ters yön)
     scale_direction = 1  # Ölçek yönü (1: büyüt, -1: küçült)
-
-
 
     # Resmin konumunu belirle
     grass_rect = active_grass_img.get_rect()
@@ -539,10 +629,7 @@ def run_loop(screen, clock, assets):
         pygame.draw.rect(screen, (40, 58, 44), stats_panel_rect, border_radius=3)
         pygame.draw.rect(screen, (80, 98, 84), stats_panel_rect, 2, border_radius=3)
 
-        
-
         ez = SCREEN_SIZE[0] - 132, 558, 35, 35
-
 
         pygame.draw.rect(screen, (20, 38, 24), ez, border_radius=3)
 
@@ -554,7 +641,9 @@ def run_loop(screen, clock, assets):
         # AFK Gelir butonu çizimi
         padding = 8  # Daha az padding
         afk_text = f"AFK Income +0.5 (${int(afk_upgrade_cost)})"
-        afk_button_text_rect = small_font.get_rect(afk_text) if hasattr(small_font, 'get_rect') else None
+        afk_button_text_rect = (
+            small_font.get_rect(afk_text) if hasattr(small_font, "get_rect") else None
+        )
         afk_text_surf = small_font.render(afk_text, True, TEXT_COLOR)
         afk_text_rect = afk_text_surf.get_rect()
         button_width = afk_text_rect.width + 2 * padding
@@ -573,7 +662,9 @@ def run_loop(screen, clock, assets):
         )  # Daha az boşluk
         deneme_text_rect.center = deneme_button_rect.center
 
-        multiplier_text = f"Click Power x{multiplier + 0.5} (${int(multiplier_upgrade_cost)})"
+        multiplier_text = (
+            f"Click Power x{multiplier + 0.5} (${int(multiplier_upgrade_cost)})"
+        )
         multiplier_text_surf = small_font.render(multiplier_text, True, TEXT_COLOR)
         multiplier_text_rect = multiplier_text_surf.get_rect()
         button_width = multiplier_text_rect.width + 2 * padding
@@ -610,8 +701,8 @@ def run_loop(screen, clock, assets):
         stats_text_rect.center = stats_button_rect.center
 
         weather_timer += dt
-        if weather_timer >= 50: #50 sn bekle
-            pygame.mixer.Sound.set_volume(weather_change_effect, 0.0696705)
+        if weather_timer >= 50:  # 50 sn bekle
+            _safe_set_volume(weather_change_effect, 0.0696705)
             weather_change_effect.play()
             weather_timer = 0
             random_weather_change = random.randint(0, 7)
@@ -624,7 +715,7 @@ def run_loop(screen, clock, assets):
                 weather_multiplier = 1.3
             elif random_weather_change == 6 or random_weather_change == 7:
                 weather_index = 2
-                weather_multiplier = 1.5    
+                weather_multiplier = 1.5
 
             elif random_weather_change == 8:
                 weather_index = 3
@@ -651,19 +742,64 @@ def run_loop(screen, clock, assets):
         shop_text_rect.center = shop_button_rect.center
 
         # Draw AFK button
-        draw_button(screen, afk_button_rect, AFK_BUTTON_COLOR, BUTTON_BORDER_COLOR, afk_text, small_font, dt, effect_name='afk')
+        draw_button(
+            screen,
+            afk_button_rect,
+            AFK_BUTTON_COLOR,
+            BUTTON_BORDER_COLOR,
+            afk_text,
+            small_font,
+            dt,
+            effect_name="afk",
+        )
 
         # Çarpan butonu çizimi
-        draw_button(screen, multiplier_button_rect, MULTIPLIER_BUTTON_COLOR, BUTTON_BORDER_COLOR, multiplier_text, small_font, dt, effect_name='mult')
+        draw_button(
+            screen,
+            multiplier_button_rect,
+            MULTIPLIER_BUTTON_COLOR,
+            BUTTON_BORDER_COLOR,
+            multiplier_text,
+            small_font,
+            dt,
+            effect_name="mult",
+        )
 
         # Kaydet butonu çizimi
-        draw_button(screen, save_button_rect, SAVE_BUTTON_COLOR, BUTTON_BORDER_COLOR, save_text, small_font, dt, effect_name='save')
+        draw_button(
+            screen,
+            save_button_rect,
+            SAVE_BUTTON_COLOR,
+            BUTTON_BORDER_COLOR,
+            save_text,
+            small_font,
+            dt,
+            effect_name="save",
+        )
 
         # İstatistik butonu çizimi
-        draw_button(screen, stats_button_rect, STATS_BUTTON_COLOR, BUTTON_BORDER_COLOR, stats_text, small_font, dt, effect_name='stats')
+        draw_button(
+            screen,
+            stats_button_rect,
+            STATS_BUTTON_COLOR,
+            BUTTON_BORDER_COLOR,
+            stats_text,
+            small_font,
+            dt,
+            effect_name="stats",
+        )
 
         # Mağaza butonu çizimi
-        draw_button(screen, shop_button_rect, SHOP_BUTTON_COLOR, BUTTON_BORDER_COLOR, shop_text, small_font, dt, effect_name='shop')
+        draw_button(
+            screen,
+            shop_button_rect,
+            SHOP_BUTTON_COLOR,
+            BUTTON_BORDER_COLOR,
+            shop_text,
+            small_font,
+            dt,
+            effect_name="shop",
+        )
 
         weather_surface = pygame.Surface((100, 30))
 
@@ -672,7 +808,16 @@ def run_loop(screen, clock, assets):
         wipe_text_rect = wipe_button_text.get_rect()
         wipe_text_rect.center = wipe_button_rect.center
 
-        draw_button(screen, wipe_button_rect, (200, 0, 0), BUTTON_BORDER_COLOR, "Wipe Save", extra_small_font, dt, effect_name='wipe')
+        draw_button(
+            screen,
+            wipe_button_rect,
+            (200, 0, 0),
+            BUTTON_BORDER_COLOR,
+            "Wipe Save",
+            extra_small_font,
+            dt,
+            effect_name="wipe",
+        )
 
         # Smooth scale/rotation using sine for smoother motion
         # amplitude based on configured MIN/MAX
@@ -697,7 +842,7 @@ def run_loop(screen, clock, assets):
         sound_button = sound_image.get_rect(topleft=(SCREEN_SIZE[0] - 130, 560))
         # sound button rect
 
-        # === İMLEÇ KONTROLÜ === 
+        # === İMLEÇ KONTROLÜ ===
         mouse_pos = pygame.mouse.get_pos()
         if (
             afk_button_rect.collidepoint(mouse_pos)
@@ -723,8 +868,13 @@ def run_loop(screen, clock, assets):
 
         # draw save message if any
         if save_msg_timer > 0:
-            save_msg_surf = small_font.render(save_msg_text or "Game Saved!", True, (255,255,255))
-            screen.blit(save_msg_surf, (SCREEN_SIZE[0]//2 - save_msg_surf.get_width()//2, 10))
+            save_msg_surf = small_font.render(
+                save_msg_text or "Game Saved!", True, (255, 255, 255)
+            )
+            screen.blit(
+                save_msg_surf,
+                (SCREEN_SIZE[0] // 2 - save_msg_surf.get_width() // 2, 10),
+            )
 
         # Kullanıcı girişlerini kontrol et
         for event in pygame.event.get():
@@ -748,11 +898,19 @@ def run_loop(screen, clock, assets):
                 if afk_button_rect.collidepoint(event.pos):
                     if money >= afk_upgrade_cost:
                         if current_sound_state == "on":
-                            pygame.mixer.Sound.set_volume(buy_effect, 0.0896705)
-                            buy_effect.play()
+                            if buy_effect:
+                                try:
+                                    _safe_set_volume(buy_effect, 0.0896705)
+                                    buy_effect.play()
+                                except Exception:
+                                    pass
                         # press animation + particles
-                        button_states.setdefault('afk', {'hover':0.0, 'press':0.0})['press'] = 1.0
-                        spawn_particles(particles, afk_button_rect.center, (60,144,255), count=14)
+                        button_states.setdefault("afk", {"hover": 0.0, "press": 0.0})[
+                            "press"
+                        ] = 1.0
+                        spawn_particles(
+                            particles, afk_button_rect.center, (60, 144, 255), count=14
+                        )
                         money -= afk_upgrade_cost
                         if current_grass_index == 0:
                             auto_income += 0.5 * multiplier
@@ -761,47 +919,80 @@ def run_loop(screen, clock, assets):
                             auto_income += 0.5 * multiplier * current_grass_index * 1.5
                             afk_upgrade_cost *= 1.2
 
-
-
                 elif sound_button.collidepoint(event.pos):
                     if current_sound_state == "on":
                         # Müziği duraklat
-                        pygame.mixer.music.pause()
+                        try:
+                            pygame.mixer.music.pause()
+                        except Exception:
+                            pass
                         # Tüm efekt seslerini kapat
-                        pygame.mixer.Sound.set_volume(click_effect, 0)
-                        pygame.mixer.Sound.set_volume(weather_change_effect, 0)
-                        pygame.mixer.Sound.set_volume(buy_effect, 0)
+                        if click_effect:
+                            try:
+                                _safe_set_volume(click_effect, 0)
+                            except Exception:
+                                pass
+                        if weather_change_effect:
+                            try:
+                                _safe_set_volume(weather_change_effect, 0)
+                            except Exception:
+                                pass
+                        if buy_effect:
+                            try:
+                                _safe_set_volume(buy_effect, 0)
+                            except Exception:
+                                pass
                         current_sound_state = "off"
                         sound_image = sound_off_image
                         screen.blit(sound_image, (SCREEN_SIZE[0] - 130, 560))
 
-
                     else:
                         # Müziği devam ettir
-                        pygame.mixer.music.unpause()
+                        try:
+                            pygame.mixer.music.unpause()
+                        except Exception:
+                            pass
                         # Tüm efekt seslerini aç
-                        pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
-                        pygame.mixer.Sound.set_volume(weather_change_effect, 0.0696705)
-                        pygame.mixer.Sound.set_volume(buy_effect, 0.0896705)
+                        if click_effect:
+                            try:
+                                _safe_set_volume(click_effect, 0.0896705)
+                            except Exception:
+                                pass
+                        if weather_change_effect:
+                            try:
+                                _safe_set_volume(weather_change_effect, 0.0696705)
+                            except Exception:
+                                pass
+                        if buy_effect:
+                            try:
+                                _safe_set_volume(buy_effect, 0.0896705)
+                            except Exception:
+                                pass
                         current_sound_state = "on"
                         sound_image = sound_on_image
                         screen.blit(sound_image, (SCREEN_SIZE[0] - 130, 560))
 
-
                 # end sound/multiplier/save handling
-
-
-
-
 
                 elif multiplier_button_rect.collidepoint(event.pos):
                     if money >= multiplier_upgrade_cost:
                         if current_sound_state == "on":
-                            pygame.mixer.Sound.set_volume(buy_effect, 0.0896705)
-                            buy_effect.play()
+                            if buy_effect:
+                                try:
+                                    _safe_set_volume(buy_effect, 0.0896705)
+                                    buy_effect.play()
+                                except Exception:
+                                    pass
                         # press animation + particles
-                        button_states.setdefault('mult', {'hover':0.0, 'press':0.0})['press'] = 1.0
-                        spawn_particles(particles, multiplier_button_rect.center, (14,176,14), count=14)
+                        button_states.setdefault("mult", {"hover": 0.0, "press": 0.0})[
+                            "press"
+                        ] = 1.0
+                        spawn_particles(
+                            particles,
+                            multiplier_button_rect.center,
+                            (14, 176, 14),
+                            count=14,
+                        )
                         money -= multiplier_upgrade_cost
                         multiplier += 0.5
                         multiplier_upgrade_cost *= 1.2
@@ -823,11 +1014,19 @@ def run_loop(screen, clock, assets):
                         ]
                 elif save_button_rect.collidepoint(event.pos):
                     if current_sound_state == "on":
-                        pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                        if click_effect:
+                            try:
+                                _safe_set_volume(click_effect, 0.0896705)
+                            except Exception:
+                                pass
                         click_effect.play()
                     # visual feedback
-                    button_states.setdefault('save', {'hover':0.0, 'press':0.0})['press'] = 1.0
-                    spawn_particles(particles, save_button_rect.center, (255,165,0), count=16)
+                    button_states.setdefault("save", {"hover": 0.0, "press": 0.0})[
+                        "press"
+                    ] = 1.0
+                    spawn_particles(
+                        particles, save_button_rect.center, (255, 165, 0), count=16
+                    )
                     # Oyun verilerini kaydet
                     save_game_data(
                         {
@@ -847,31 +1046,41 @@ def run_loop(screen, clock, assets):
                     save_msg_text = "Game Saved!"
                 elif stats_button_rect.collidepoint(event.pos):
                     if current_sound_state == "on":
-                        pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                        _safe_set_volume(click_effect, 0.0896705)
                         click_effect.play()
                     # visual feedback
-                    button_states.setdefault('stats', {'hover':0.0, 'press':0.0})['press'] = 1.0
-                    spawn_particles(particles, stats_button_rect.center, (138,43,226), count=12)
+                    button_states.setdefault("stats", {"hover": 0.0, "press": 0.0})[
+                        "press"
+                    ] = 1.0
+                    spawn_particles(
+                        particles, stats_button_rect.center, (138, 43, 226), count=12
+                    )
                     show_stats = not show_stats  # İstatistik ekranını aç/kapat
                     show_shop = False  # Mağaza ekranını kapat
                 elif shop_button_rect.collidepoint(event.pos):
                     if current_sound_state == "on":
-                        pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                        _safe_set_volume(click_effect, 0.0896705)
                         click_effect.play()
                     # visual feedback
-                    button_states.setdefault('shop', {'hover':0.0, 'press':0.0})['press'] = 1.0
-                    spawn_particles(particles, shop_button_rect.center, (255,105,180), count=18)
+                    button_states.setdefault("shop", {"hover": 0.0, "press": 0.0})[
+                        "press"
+                    ] = 1.0
+                    spawn_particles(
+                        particles, shop_button_rect.center, (255, 105, 180), count=18
+                    )
                     show_shop = not show_shop  # Mağaza ekranını aç/kapat
                     show_stats = False  # İstatistik ekranını kapat
                 elif grass_rect.collidepoint(event.pos):
                     if current_sound_state == "on":
-                        pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                        _safe_set_volume(click_effect, 0.0896705)
                         click_effect.play()
                     if current_grass_index == 0:
                         money += 1 * multiplier * weather_multiplier
                         total_clicks += 1
                         # spawn particles at click position (center of grass)
-                        spawn_particles(particles, grass_rect.center, (255, 240, 160), count=18)
+                        spawn_particles(
+                            particles, grass_rect.center, (255, 240, 160), count=18
+                        )
                     elif current_grass_index >= 1:
                         money += (
                             1
@@ -881,14 +1090,20 @@ def run_loop(screen, clock, assets):
                             * weather_multiplier
                         )
                         total_clicks += 1
-                        spawn_particles(particles, grass_rect.center, (220, 255, 200), count=22)
+                        spawn_particles(
+                            particles, grass_rect.center, (220, 255, 200), count=22
+                        )
                 elif wipe_button_rect.collidepoint(event.pos):
                     if current_sound_state == "on":
-                        pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                        _safe_set_volume(click_effect, 0.0896705)
                         click_effect.play()
                     # visual feedback
-                    button_states.setdefault('wipe', {'hover':0.0, 'press':0.0})['press'] = 1.0
-                    spawn_particles(particles, wipe_button_rect.center, (200,50,50), count=20)
+                    button_states.setdefault("wipe", {"hover": 0.0, "press": 0.0})[
+                        "press"
+                    ] = 1.0
+                    spawn_particles(
+                        particles, wipe_button_rect.center, (200, 50, 50), count=20
+                    )
                     save_dir = get_save_dir()
                     save_path = os.path.join(save_dir, "save_data.json")
                     if os.path.exists(save_path):
@@ -982,11 +1197,6 @@ def run_loop(screen, clock, assets):
         screen.blit(weather_text, (weather_panel_rect.x + 15, weather_panel_rect.y + 9))
         screen.blit(timer_text, (weather_panel_rect.x + 6, weather_panel_rect.y + 43))
 
-        
-
-
-
-
         # İstatistik ekranını göster - Pixel art tarzı için daha keskin kenarlar
         if show_stats:
             stats_surface = pygame.Surface((500, 400))
@@ -1066,7 +1276,7 @@ def run_loop(screen, clock, assets):
 
                     if adjusted_close_rect.collidepoint(event.pos):
                         show_stats = False
-                        pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                        _safe_set_volume(click_effect, 0.0896705)
                         click_effect.play()
 
         # Mağaza ekranını göster - Pixel art tarzı için daha keskin kenarlar.
@@ -1163,14 +1373,14 @@ def run_loop(screen, clock, assets):
                             # Zaten sahip olunan çimi seç
                             current_grass_index = i
                             active_grass_img = grass_images[current_grass_index]
-                            pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                            _safe_set_volume(click_effect, 0.0896705)
                             click_effect.play()
                         elif i > 0 and current_grass_index < i and money >= cost:
                             # Yeni çim satın al
                             money -= cost
                             current_grass_index = i
                             active_grass_img = grass_images[current_grass_index]
-                            pygame.mixer.Sound.set_volume(buy_effect, 0.0896705)
+                            _safe_set_volume(buy_effect, 0.0896705)
                             buy_effect.play()
 
                 y_pos += item_height + 10
@@ -1208,7 +1418,7 @@ def run_loop(screen, clock, assets):
 
                     if adjusted_close_rect.collidepoint(event.pos):
                         show_shop = False
-                        pygame.mixer.Sound.set_volume(click_effect, 0.0896705)
+                        _safe_set_volume(click_effect, 0.0896705)
                         click_effect.play()
 
         pygame.display.flip()
@@ -1256,7 +1466,9 @@ def get_save_dir():
 
     # macOS
     if sys.platform == "darwin":
-        return os.path.join(os.path.expanduser("~"), "Library", "Application Support", "TouchTheGrass")
+        return os.path.join(
+            os.path.expanduser("~"), "Library", "Application Support", "TouchTheGrass"
+        )
 
     # Linux and other Unixes
     xdg = os.getenv("XDG_DATA_HOME")
