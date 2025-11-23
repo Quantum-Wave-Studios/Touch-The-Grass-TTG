@@ -1,30 +1,204 @@
-import pygame
+import os
 import sys
 import json
-import os
 import random
-import time
 import math
-from .settings import SCREEN_SIZE, CENTER, MIN_SCALE, MAX_SCALE
-from .paths import CUSTOM_FONT_PATH, CLICK_SOUND_PATH, BACK_SOUND_PATH
+import pygame
+
 from .assets import resource_path
+from .paths import BACK_SOUND_PATH, CLICK_SOUND_PATH, CUSTOM_FONT_PATH
+from .settings import SCREEN_SIZE, CENTER, MIN_SCALE, MAX_SCALE
+
+# Simple particle system (pooled) to support pixel-art particles.
+MAX_PARTICLES = 700
+_particle_pool = []
 
 
-income = 0
+def spawn_particles(p_list, position, color, count=12):
+    """Spawn simple square (pixel) particles at position.
+
+    p_list: the active particles list (modified in place)
+    position: (x,y) tuple
+    color: (r,g,b)
+    """
+    for _ in range(count):
+        if len(p_list) >= MAX_PARTICLES:
+            break
+        if _particle_pool:
+            p = _particle_pool.pop()
+            # ensure no leftover keys from previous use
+            p.clear()
+        else:
+            p = {}
+
+        # Determine emission style: side (horizontal), pop-up (rise then fall), or fall-first
+        r = random.random()
+        if r < 0.20:
+            # side emission: go directly left or right with strong horizontal velocity
+            dir_sign = random.choice((-1, 1))
+            vx = dir_sign * random.uniform(160.0, 320.0)
+            vy = random.uniform(-30.0, 30.0)
+            life = random.uniform(0.6, 1.1)
+            # make side particles tiny
+            size = random.randint(1, 2)
+            float_time = 0.0
+            # keep pushing outward a bit
+            side_acc = dir_sign * random.uniform(40.0, 120.0)
+        elif r < 0.65:
+            # pop-up particles: milder upward velocity, stronger lateral spread
+            vx = random.uniform(-160.0, 160.0)
+            vy = -random.uniform(70.0, 160.0)  # negative = upward on screen
+            life = random.uniform(0.7, 1.3)
+            # slightly larger but still small
+            size = random.randint(1, 3)
+            float_time = random.uniform(0.08, 0.22)  # reduced gravity window
+            side_acc = random.uniform(-120.0, 120.0)
+        else:
+            # drifting/fall-first particles
+            vx = random.uniform(-100.0, 100.0)
+            vy = random.uniform(40.0, 160.0)  # positive = downward
+            life = random.uniform(0.5, 1.0)
+            size = random.randint(1, 3)
+            float_time = 0.0
+            side_acc = random.uniform(-40.0, 40.0)
+
+        # create per-particle shade start/end for subtle tonal interpolation
+        def _clamp(v):
+            return max(0, min(255, int(v)))
+
+        # small brighten/darken factors
+        b_factor = random.uniform(1.02, 1.22)
+        d_factor = random.uniform(0.45, 0.92)
+        shade_start = [
+            _clamp(color[0] * b_factor),
+            _clamp(color[1] * b_factor),
+            _clamp(color[2] * b_factor),
+        ]
+        shade_end = [
+            _clamp(color[0] * d_factor),
+            _clamp(color[1] * d_factor),
+            _clamp(color[2] * d_factor),
+        ]
+
+        # add tiny per-channel jitter so not all particles have identical tones
+        for ci in range(3):
+            shade_start[ci] = _clamp(shade_start[ci] + random.randint(-8, 8))
+            shade_end[ci] = _clamp(shade_end[ci] + random.randint(-12, 12))
+        shade_start = tuple(shade_start)
+        shade_end = tuple(shade_end)
+
+        # Increase particle size by 36% (user request)
+        size = max(1, int(round(size * 1.36)))
+
+        # Physics tuning: per-particle drag, wind, and small oscillation for natural motion
+        drag = random.uniform(0.6, 2.2)  # higher = slows quicker
+        wind = random.uniform(-28.0, 28.0)
+        osc_amp = random.uniform(0.0, 2.4)
+        osc_freq = random.uniform(1.2, 6.0)
+
+        # Add angular jitter to spread directions so particles don't all go identical
+        try:
+            ang = math.atan2(vy, vx)
+        except Exception:
+            ang = 0.0
+        ang += random.uniform(math.radians(-35.0), math.radians(35.0))
+        speed = math.hypot(vx, vy) * random.uniform(0.78, 1.18)
+        vx = math.cos(ang) * speed
+        vy = math.sin(ang) * speed
+
+        # If the source color looks like grass (green-dominant), add subtle green tone variations
+        is_grass = color[1] > color[0] and color[1] > color[2] and color[1] >= 60
+        if is_grass and random.random() < 0.35:
+            # create green-leaning shades
+            g_base = max(80, color[1])
+            gs = (
+                _clamp(int(g_base * random.uniform(0.18, 0.55))),
+                _clamp(int(g_base * random.uniform(0.85, 1.15))),
+                _clamp(int(g_base * random.uniform(0.08, 0.45))),
+            )
+            ge = (
+                _clamp(int(g_base * random.uniform(0.35, 0.78))),
+                _clamp(int(g_base * random.uniform(0.42, 0.95))),
+                _clamp(int(g_base * random.uniform(0.05, 0.28))),
+            )
+            shade_start = gs
+            shade_end = ge
+
+            # occasionally spawn a tiny vivid green fleck in addition
+            if random.random() < 0.12:
+                fleck = {}
+                fleck["pos"] = [float(position[0]), float(position[1])]
+                fleck["vel"] = [random.uniform(-80, 80), random.uniform(-60, 20)]
+                fleck["life"] = random.uniform(0.45, 0.9)
+                fleck["max_life"] = fleck["life"]
+                fleck["color"] = (180, 255, 120)
+                fleck["shade_start"] = (200, 255, 140)
+                fleck["shade_end"] = (100, 160, 80)
+                fleck["size"] = 1
+                fleck["age"] = 0.0
+                fleck["float_time"] = 0.0
+                fleck["side_acc"] = random.uniform(-20, 20)
+                fleck["drag"] = random.uniform(0.8, 2.2)
+                fleck["wind"] = random.uniform(-10, 10)
+                fleck["osc_amp"] = random.uniform(0.0, 1.2)
+                fleck["osc_freq"] = random.uniform(2.0, 6.0)
+                p_list.append(fleck)
+
+        # If the source color looks yellow-ish, occasionally bias tones slightly green
+        is_yellow = (
+            color[0] >= 160 and color[1] >= 140 and color[2] <= 140
+        ) or (color[0] > color[1] and color[1] > color[2] and color[1] >= 120)
+        if is_yellow and random.random() < 0.30:
+            # nudge toward greener yellows (subtle)
+            gs = (
+                _clamp(color[0] * random.uniform(0.92, 1.03)),
+                _clamp(color[1] * random.uniform(1.06, 1.28)),
+                _clamp(color[2] * random.uniform(0.45, 0.85)),
+            )
+            ge = (
+                _clamp(color[0] * random.uniform(0.72, 0.95)),
+                _clamp(color[1] * random.uniform(0.88, 1.02)),
+                _clamp(color[2] * random.uniform(0.20, 0.55)),
+            )
+            # apply small per-channel jitter too
+            gs = tuple(_clamp(c + random.randint(-6, 6)) for c in gs)
+            ge = tuple(_clamp(c + random.randint(-10, 10)) for c in ge)
+            shade_start = gs
+            shade_end = ge
+
+        p.update({
+            "pos": [float(position[0]), float(position[1])],
+            "vel": [vx, vy],
+            "life": life,
+            "max_life": life,
+            # keep original color for reference
+            "color": color,
+            "shade_start": shade_start,
+            "shade_end": shade_end,
+            "size": size,
+            "age": 0.0,
+            "float_time": float_time,
+            "side_acc": side_acc,
+            "drag": drag,
+            "wind": wind,
+            "osc_amp": osc_amp,
+            "osc_freq": osc_freq,
+        })
+        p_list.append(p)
 
 
-# Safe audio helpers to avoid crashes on systems without a working audio backend
+# Audio helpers to safely call mixer functions even when mixer is unavailable
 def _safe_set_volume(sound_obj, vol):
     try:
-        if sound_obj is not None:
-            pygame.mixer.Sound.set_volume(sound_obj, vol)
+        if getattr(globals().get("game_loop", None), "MIXER_AVAILABLE", True) and sound_obj is not None:
+            sound_obj.set_volume(vol)
     except Exception:
         pass
 
 
 def _safe_play(sound_obj):
     try:
-        if sound_obj is not None:
+        if getattr(globals().get("game_loop", None), "MIXER_AVAILABLE", True) and sound_obj is not None:
             sound_obj.play()
     except Exception:
         pass
@@ -32,116 +206,137 @@ def _safe_play(sound_obj):
 
 def _safe_music_pause():
     try:
-        pygame.mixer.music.pause()
+        if getattr(globals().get("game_loop", None), "MIXER_AVAILABLE", True):
+            pygame.mixer.music.pause()
     except Exception:
         pass
 
 
 def _safe_music_unpause():
     try:
-        pygame.mixer.music.unpause()
+        if getattr(globals().get("game_loop", None), "MIXER_AVAILABLE", True):
+            pygame.mixer.music.unpause()
     except Exception:
         pass
 
-# Monkey-patch pygame.mixer.Sound.set_volume to be safe (ignore None / backend errors)
-try:
-    _orig_set_volume = pygame.mixer.Sound.set_volume
-    def _wrapped_set_volume(sound_obj, vol):
-        try:
-            if sound_obj is not None:
-                _orig_set_volume(sound_obj, vol)
-        except Exception:
-            pass
-    pygame.mixer.Sound.set_volume = _wrapped_set_volume
-except Exception:
-    # if pygame or mixer not initialized, ignore
-    pass
 
-# Particle system global config and pool
-MAX_PARTICLES = 700
-_particle_pool = []  # list of recycled particle dicts
+def update_particles(p_list, dt):
+    """Simple Euler integration and pooling for expired particles.
 
-
-# ensure draw_particles cache exists at module import-time
-def _ensure_particle_cache():
-    if not hasattr(draw_particles, "cache"):
-        draw_particles.cache = {}
-
-
-def spawn_particles(particles_list, position, color, count=16):
-    """Append simple particle dicts to particles_list."""
-    # enforce a global particle cap to avoid storms
-    allowed = max(0, MAX_PARTICLES - len(particles_list))
-    to_spawn = min(count, allowed)
-    for i in range(to_spawn):
-        # reuse particle dicts from pool when available
-        if _particle_pool:
-            p = _particle_pool.pop()
-        else:
-            p = {}
-        angle = random.uniform(0, math.tau if hasattr(math, "tau") else 2 * math.pi)
-        speed = random.uniform(60, 220)
-        vx = math.cos(angle) * speed
-        vy = math.sin(angle) * speed
-        lifetime = random.uniform(0.5, 1.2)
-        radius = random.randint(2, 5)
-        p.update(
-            {
-                "pos": [float(position[0]), float(position[1])],
-                "vel": [vx, vy],
-                "life": lifetime,
-                "max_life": lifetime,
-                "color": color,
-                "r": radius,
-            }
-        )
-        particles_list.append(p)
-
-
-def update_particles(particles_list, dt):
-    # simple physics: velocity, gravity, life decay
-    g = 300.0
+    Particles have an 'age' and optional 'float_time' during which gravity is reduced
+    so pop-up particles rise a bit then are pulled down by normal gravity.
+    """
+    g = 400.0
     i = 0
-    while i < len(particles_list):
-        p = particles_list[i]
-        p["vel"][1] += g * dt
+    while i < len(p_list):
+        p = p_list[i]
+        # age
+        p["age"] = p.get("age", 0.0) + dt
+
+
+        # improved physics:
+        # - apply a gentle upward lift during float_time for pop particles
+        # - otherwise apply normal gravity
+        if p.get("age", 0.0) < p.get("float_time", 0.0):
+            # gentle lift to accentuate a short pop
+            p["vel"][1] += -g * 0.45 * dt
+        else:
+            p["vel"][1] += g * dt
+
+        # apply sideways acceleration (initial push)
+        p["vel"][0] += p.get("side_acc", 0.0) * dt
+
+        # apply persistent wind
+        p["vel"][0] += p.get("wind", 0.0) * dt
+
+        # apply drag (velocity decay). Use per-particle drag; clamp multiplier to >=0
+        drag = p.get("drag", 1.0)
+        vd = max(0.0, 1.0 - drag * dt)
+        p["vel"][0] *= vd
+        # vertical drag is smaller
+        p["vel"][1] *= max(0.0, 1.0 - (drag * 0.35) * dt)
+
+        # integrate
         p["pos"][0] += p["vel"][0] * dt
         p["pos"][1] += p["vel"][1] * dt
+
+        # small oscillation around x based on osc_amp/freq (for drawing jitter)
+        # we don't modify pos permanently; draw offset will be computed in draw
+        # store age-based phase if needed (no-op here, age is used by draw)
+
         p["life"] -= dt
         if p["life"] <= 0:
-            # recycle into pool
-            dead = particles_list.pop(i)
-            # clear big list items to avoid holding refs
-            dead.clear()
-            _particle_pool.append(dead)
+            # recycle
+            p.clear()
+            _particle_pool.append(p)
+            p_list.pop(i)
         else:
             i += 1
 
 
-def draw_particles(surface, particles_list):
-    # ensure cache exists
-    _ensure_particle_cache()
+def draw_particles(surface, p_list):
+    """Draw particles as pixel squares using a small surface cache."""
+    # cache structure: { (size,color): {"base": Surface, "alpha": {alpha_int: Surface}} }
+    if not hasattr(draw_particles, "cache"):
+        draw_particles.cache = {}
     cache = draw_particles.cache
-    for p in particles_list:
-        life_ratio = max(0.0, min(1.0, p["life"] / (p.get("max_life", 1.0) or 1.0)))
-        alpha = int(255 * life_ratio)
-        # soften size over life for nicer fade
-        r = max(1, int(p["r"] * (0.6 + 0.4 * life_ratio)))
-        color = p["color"]
-        # key: (r, r,g,b)
-        color_key = (r, color[0], color[1], color[2])
+    for p in p_list:
+        r = p.get("size", 3)
+        # interpolate color between shade_start -> shade_end based on life progression
+        max_life = max(1e-6, p.get("max_life", 1.0))
+        life = max(0.0, p.get("life", 0.0))
+        progress = 1.0 - (life / max_life)  # 0 = birth, 1 = death
 
-        if color_key not in cache:
-            surf = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
-            # draw circle with the target color directly (no per-blit tinting)
-            pygame.draw.circle(surf, (color[0], color[1], color[2], 255), (r, r), r)
-            cache[color_key] = surf
+        ss = p.get("shade_start", p.get("color", (255, 255, 255)))
+        se = p.get("shade_end", p.get("color", (255, 255, 255)))
+        # linear interpolation
+        cur_col = (
+            int(ss[0] + (se[0] - ss[0]) * progress),
+            int(ss[1] + (se[1] - ss[1]) * progress),
+            int(ss[2] + (se[2] - ss[2]) * progress),
+        )
 
-        base = cache[color_key]
-        # create a lightweight copy to set alpha without expensive blit tinting
-        draw_surf = base.copy()
-        draw_surf.set_alpha(alpha)
-        surface.blit(draw_surf, (int(p["pos"][0] - r), int(p["pos"][1] - r)))
+        # round color channels to reduce cache variety (keeps memory bounded)
+        rounded_col = (
+            max(0, min(255, int(round(cur_col[0] / 8.0) * 8))),
+            max(0, min(255, int(round(cur_col[1] / 8.0) * 8))),
+            max(0, min(255, int(round(cur_col[2] / 8.0) * 8))),
+        )
+
+        # alpha based on remaining life (0..255)
+        alpha = int(255 * max(0.0, life / max_life))
+        alpha = max(0, min(255, alpha))
+
+        color_key = (r, rounded_col)
+        entry = cache.get(color_key)
+        if entry is None:
+            base = pygame.Surface((r * 2, r * 2), pygame.SRCALPHA)
+            base.fill((rounded_col[0], rounded_col[1], rounded_col[2], 255))
+            entry = {"base": base, "alpha": {}}
+            cache[color_key] = entry
+
+        alpha_map = entry["alpha"]
+        draw_surf = alpha_map.get(alpha)
+        if draw_surf is None:
+            # create and cache this alpha variant
+            draw_surf = entry["base"].copy()
+            draw_surf.set_alpha(alpha)
+            alpha_map[alpha] = draw_surf
+
+        # add a small oscillation offset for natural fluttering
+        osc_amp = p.get("osc_amp", 0.0)
+        osc_freq = p.get("osc_freq", 0.0)
+        if osc_amp and osc_freq:
+            try:
+                offset_x = math.sin(p.get("age", 0.0) * osc_freq) * osc_amp
+            except Exception:
+                offset_x = 0.0
+        else:
+            offset_x = 0.0
+
+        blit_x = int(round(p["pos"][0] - r + offset_x))
+        blit_y = int(round(p["pos"][1] - r))
+        surface.blit(draw_surf, (blit_x, blit_y))
 
 
 # create a cached background gradient to avoid per-frame fill calls
@@ -297,8 +492,8 @@ def draw_button(
     if not hasattr(draw_button, "button_cache"):
         draw_button.button_cache = {}
     cache_key = (text, id(font), base_w, base_h, bg_color, border_color, text_color)
-    base_surf = draw_button.button_cache.get(cache_key)
-    if base_surf is None:
+    val = draw_button.button_cache.get(cache_key)
+    if val is None:
         base_surf = pygame.Surface((base_w, base_h), pygame.SRCALPHA)
         pygame.draw.rect(
             base_surf, bg_color, pygame.Rect(0, 0, base_w, base_h), border_radius=6
@@ -313,9 +508,24 @@ def draw_button(
         text_surf = font.render(text, True, text_color)
         txt_rect = text_surf.get_rect(center=(base_w // 2, base_h // 2))
         base_surf.blit(text_surf, txt_rect)
-        draw_button.button_cache[cache_key] = base_surf
 
-    # Handle press animation as a target scale using SmoothDamp for smoothness
+        # create a soft drop shadow surface (cached alongside base)
+        shadow = pygame.Surface((base_w + 8, base_h + 8), pygame.SRCALPHA)
+        for i, a in enumerate((48, 32, 20, 12)):
+            pygame.draw.rect(
+                shadow,
+                (0, 0, 0, a),
+                pygame.Rect(i, i, base_w + 8 - i * 2, base_h + 8 - i * 2),
+                border_radius=8,
+            )
+
+        draw_button.button_cache[cache_key] = (base_surf, shadow)
+    else:
+        if isinstance(val, tuple):
+            base_surf, shadow = val
+        else:
+            base_surf = val
+            shadow = None
     # press impulse decays quickly
     press_impulse = state.get("press_impulse", 0.0)
     # If previous code set numeric 'press', map it to impulse (backcompat)
@@ -346,6 +556,22 @@ def draw_button(
         except Exception:
             btn_surf = pygame.transform.scale(base_surf, (sw, sh))
 
+    # draw shadow (if cached) beneath the button
+    shadow_surf = None
+    if shadow is not None:
+        try:
+            shadow_surf = pygame.transform.smoothscale(shadow, (sw + 8, sh + 8))
+        except Exception:
+            try:
+                shadow_surf = pygame.transform.scale(shadow, (sw + 8, sh + 8))
+            except Exception:
+                shadow_surf = None
+    if shadow_surf is not None:
+        shadow_rect = shadow_surf.get_rect(center=draw_rect.center)
+        shadow_rect.x += 3
+        shadow_rect.y += 4
+        surface.blit(shadow_surf, shadow_rect.topleft)
+
     surface.blit(btn_surf, draw_rect.topleft)
 
     # compute text_rect for callers (centered on the drawn button)
@@ -356,7 +582,7 @@ def draw_button(
 
     return text_rect
 
-
+    
 def safe_load_sound(path, default_volume=0.08):
     try:
         s = pygame.mixer.Sound(resource_path(path))
@@ -380,9 +606,12 @@ def run_loop(screen, clock, assets):
     music_enabled = True
     try:
         try:
-            pygame.mixer.music.load(resource_path(BACK_SOUND_PATH))
-            pygame.mixer.music.play(-1)  # Sonsuz döngüde çal
-            pygame.mixer.music.set_volume(0.01596705)  # Ses seviyesini ayarla (0.0 - 1.0)
+            if getattr(globals().get("game_loop", None), "MIXER_AVAILABLE", True):
+                pygame.mixer.music.load(resource_path(BACK_SOUND_PATH))
+                pygame.mixer.music.play(-1)  # Sonsuz döngüde çal
+                pygame.mixer.music.set_volume(
+                    0.01596705
+                )  # Ses seviyesini ayarla (0.0 - 1.0)
         except Exception:
             # Ignore music backend errors on platforms like Wine/Linux headless
             pass
@@ -531,9 +760,12 @@ def run_loop(screen, clock, assets):
 
     # sesleri yükle ve çal
     try:
-        pygame.mixer.music.load(resource_path(BACK_SOUND_PATH))
-        pygame.mixer.music.play(-1)  # Sonsuz döngüde çal
-        pygame.mixer.music.set_volume(0.01596705)  # Ses seviyesini ayarla (0.0 - 1.0)
+        if getattr(globals().get("game_loop", None), "MIXER_AVAILABLE", True):
+            pygame.mixer.music.load(resource_path(BACK_SOUND_PATH))
+            pygame.mixer.music.play(-1)  # Sonsuz döngüde çal
+            pygame.mixer.music.set_volume(
+                0.01596705
+            )  # Ses seviyesini ayarla (0.0 - 1.0)
     except Exception:
         pass
     # use configured CLICK_SOUND_PATH constant when available
@@ -703,7 +935,7 @@ def run_loop(screen, clock, assets):
         weather_timer += dt
         if weather_timer >= 50:  # 50 sn bekle
             _safe_set_volume(weather_change_effect, 0.0696705)
-            weather_change_effect.play()
+            _safe_play(weather_change_effect)
             weather_timer = 0
             random_weather_change = random.randint(0, 7)
             if (
@@ -901,7 +1133,7 @@ def run_loop(screen, clock, assets):
                             if buy_effect:
                                 try:
                                     _safe_set_volume(buy_effect, 0.0896705)
-                                    buy_effect.play()
+                                    _safe_play(buy_effect)
                                 except Exception:
                                     pass
                         # press animation + particles
@@ -923,7 +1155,7 @@ def run_loop(screen, clock, assets):
                     if current_sound_state == "on":
                         # Müziği duraklat
                         try:
-                            pygame.mixer.music.pause()
+                            _safe_music_pause()
                         except Exception:
                             pass
                         # Tüm efekt seslerini kapat
@@ -949,7 +1181,7 @@ def run_loop(screen, clock, assets):
                     else:
                         # Müziği devam ettir
                         try:
-                            pygame.mixer.music.unpause()
+                            _safe_music_unpause()
                         except Exception:
                             pass
                         # Tüm efekt seslerini aç
@@ -980,7 +1212,7 @@ def run_loop(screen, clock, assets):
                             if buy_effect:
                                 try:
                                     _safe_set_volume(buy_effect, 0.0896705)
-                                    buy_effect.play()
+                                    _safe_play(buy_effect)
                                 except Exception:
                                     pass
                         # press animation + particles
@@ -1019,7 +1251,7 @@ def run_loop(screen, clock, assets):
                                 _safe_set_volume(click_effect, 0.0896705)
                             except Exception:
                                 pass
-                        click_effect.play()
+                        _safe_play(click_effect)
                     # visual feedback
                     button_states.setdefault("save", {"hover": 0.0, "press": 0.0})[
                         "press"
@@ -1047,7 +1279,7 @@ def run_loop(screen, clock, assets):
                 elif stats_button_rect.collidepoint(event.pos):
                     if current_sound_state == "on":
                         _safe_set_volume(click_effect, 0.0896705)
-                        click_effect.play()
+                        _safe_play(click_effect)
                     # visual feedback
                     button_states.setdefault("stats", {"hover": 0.0, "press": 0.0})[
                         "press"
@@ -1060,7 +1292,7 @@ def run_loop(screen, clock, assets):
                 elif shop_button_rect.collidepoint(event.pos):
                     if current_sound_state == "on":
                         _safe_set_volume(click_effect, 0.0896705)
-                        click_effect.play()
+                        _safe_play(click_effect)
                     # visual feedback
                     button_states.setdefault("shop", {"hover": 0.0, "press": 0.0})[
                         "press"
@@ -1073,7 +1305,7 @@ def run_loop(screen, clock, assets):
                 elif grass_rect.collidepoint(event.pos):
                     if current_sound_state == "on":
                         _safe_set_volume(click_effect, 0.0896705)
-                        click_effect.play()
+                        _safe_play(click_effect)
                     if current_grass_index == 0:
                         money += 1 * multiplier * weather_multiplier
                         total_clicks += 1
@@ -1096,7 +1328,7 @@ def run_loop(screen, clock, assets):
                 elif wipe_button_rect.collidepoint(event.pos):
                     if current_sound_state == "on":
                         _safe_set_volume(click_effect, 0.0896705)
-                        click_effect.play()
+                        _safe_play(click_effect)
                     # visual feedback
                     button_states.setdefault("wipe", {"hover": 0.0, "press": 0.0})[
                         "press"
@@ -1277,7 +1509,7 @@ def run_loop(screen, clock, assets):
                     if adjusted_close_rect.collidepoint(event.pos):
                         show_stats = False
                         _safe_set_volume(click_effect, 0.0896705)
-                        click_effect.play()
+                        _safe_play(click_effect)
 
         # Mağaza ekranını göster - Pixel art tarzı için daha keskin kenarlar.
         if show_shop:
@@ -1374,14 +1606,14 @@ def run_loop(screen, clock, assets):
                             current_grass_index = i
                             active_grass_img = grass_images[current_grass_index]
                             _safe_set_volume(click_effect, 0.0896705)
-                            click_effect.play()
+                            _safe_play(click_effect)
                         elif i > 0 and current_grass_index < i and money >= cost:
                             # Yeni çim satın al
                             money -= cost
                             current_grass_index = i
                             active_grass_img = grass_images[current_grass_index]
                             _safe_set_volume(buy_effect, 0.0896705)
-                            buy_effect.play()
+                            _safe_play(buy_effect)
 
                 y_pos += item_height + 10
 
@@ -1419,7 +1651,7 @@ def run_loop(screen, clock, assets):
                     if adjusted_close_rect.collidepoint(event.pos):
                         show_shop = False
                         _safe_set_volume(click_effect, 0.0896705)
-                        click_effect.play()
+                        _safe_play(click_effect)
 
         pygame.display.flip()
 

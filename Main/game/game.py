@@ -7,7 +7,23 @@ from . import settings, assets, game_loop
 def run_game():
     # Initialize pygame
     pygame.init()
-    pygame.mixer.init()
+    # Initialize audio safely. On some platforms (headless Linux, Wine) the
+    # mixer backend can fail to initialize and raise. Try normal init first;
+    # if it fails, try using the SDL dummy audio driver to allow the game to
+    # run without sound. We expose a flag on game_loop to let the rest of the
+    # code avoid audio operations when unavailable.
+    try:
+        pygame.mixer.init()
+        game_loop.MIXER_AVAILABLE = True
+    except Exception:
+        # Try dummy driver fallback so code that imports mixer functions
+        # won't crash. Set MIXER_AVAILABLE=False so callers can skip audio.
+        os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
+        try:
+            pygame.mixer.init()
+            game_loop.MIXER_AVAILABLE = False
+        except Exception:
+            game_loop.MIXER_AVAILABLE = False
     # Set up the game window using settings
     screen = pygame.display.set_mode(settings.SCREEN_SIZE)
     clock = pygame.time.Clock()
