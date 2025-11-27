@@ -832,6 +832,10 @@ def run_loop(screen, clock, assets):
 
     running = True
     particles = []
+    # Special collectibles (golden cookie like)
+    specials = []
+    # probabilistic spawn: chance per second to spawn a special
+    SPAWN_CHANCE_PER_SECOND = 0.10
     anim_time = 0.0
     while running:
         # Try to run up to 144 FPS for high-refresh displays. Use busy loop when available.
@@ -1098,6 +1102,43 @@ def run_loop(screen, clock, assets):
         # draw particles behind UI
         draw_particles(screen, particles)
 
+        # Draw and update specials (behind UI but above grass)
+        # Use vertical bobbing, horizontal sway and subtle rotation for livelier visuals
+        now_specials = []
+        for s in specials:
+            # vertical bobbing
+            v_amp = s.get("osc_amp", 0.0)
+            v_speed = s.get("osc_speed", 1.0)
+            v_phase = s.get("osc_phase", 0.0)
+            bob = math.sin(anim_time * v_speed + v_phase) * v_amp
+            # horizontal sway
+            sway_amp = s.get("sway_amp", 0.0)
+            sway_speed = s.get("sway_speed", 1.0)
+            sway_phase = s.get("sway_phase", 0.0)
+            sway = math.sin(anim_time * sway_speed + sway_phase) * sway_amp
+            # rotation (degrees) that oscillates left-right
+            rot_amp = s.get("rot_amp", 0.0)
+            rot_speed = s.get("rot_speed", 1.0)
+            rot_phase = s.get("rot_phase", 0.0)
+            angle = math.sin(anim_time * rot_speed + rot_phase) * rot_amp
+
+            surf = s.get("surf")
+            cx = int(s["pos"][0] + sway)
+            cy = int(s["pos"][1] + bob)
+            if surf:
+                # rotate the sprite around its center
+                rotated = pygame.transform.rotate(surf, angle)
+                rect = rotated.get_rect(center=(cx, cy))
+                screen.blit(rotated, rect.topleft)
+            else:
+                # fallback: draw a small gold circle whose radius reflects click area
+                pygame.draw.circle(
+                    screen, (240, 200, 64), (cx, cy), max(6, s.get("click_radius", 10))
+                )
+            if s.get("life", 0.0) > 0:
+                now_specials.append(s)
+        specials = now_specials
+
         # draw save message if any
         if save_msg_timer > 0:
             save_msg_surf = small_font.render(
@@ -1127,6 +1168,38 @@ def run_loop(screen, clock, assets):
                 )
                 running = False
             if event.type == pygame.MOUSEBUTTONDOWN:
+                # Check specials first (click to collect)
+                # iterate copy because we may modify list
+                for si, s in list(enumerate(specials)):
+                    # account for bobbing and sway when checking click hit
+                    v_amp = s.get("osc_amp", 0.0)
+                    v_speed = s.get("osc_speed", 1.0)
+                    v_phase = s.get("osc_phase", 0.0)
+                    bob = math.sin(anim_time * v_speed + v_phase) * v_amp
+                    sway_amp = s.get("sway_amp", 0.0)
+                    sway_speed = s.get("sway_speed", 1.0)
+                    sway_phase = s.get("sway_phase", 0.0)
+                    sway = math.sin(anim_time * sway_speed + sway_phase) * sway_amp
+                    sx = s.get("pos", (0, 0))[0] + sway
+                    sy = s.get("pos", (0, 0))[1] + bob
+                    r = s.get("click_radius", 14)
+                    if (event.pos[0] - sx) ** 2 + (event.pos[1] - sy) ** 2 <= r * r:
+                        # collect
+                        val = s.get("value", 1000)
+                        money += val
+                        # spawn particles and sound feedback
+                        spawn_particles(particles, (sx, sy), (255, 215, 80), count=20)
+                        try:
+                            _safe_play(buy_effect)
+                        except Exception:
+                            pass
+                        # remove special
+                        try:
+                            specials.pop(si)
+                        except Exception:
+                            pass
+                        # stop further click handling for this event
+                        break
                 if afk_button_rect.collidepoint(event.pos):
                     if money >= afk_upgrade_cost:
                         if current_sound_state == "on":
@@ -1658,6 +1731,54 @@ def run_loop(screen, clock, assets):
         # decrement save message timer
         if save_msg_timer > 0:
             save_msg_timer = max(0.0, save_msg_timer - dt)
+
+        # spawn/update specials (probabilistic per-second chance)
+        if random.random() < SPAWN_CHANCE_PER_SECOND * dt:
+            # spawn a special at a random position near the grass area
+            gx = random.randint(120, SCREEN_SIZE[0] - 120)
+            gy = random.randint(120, SCREEN_SIZE[1] - 220)
+            # try to use asset if loaded
+            gsurf = assets.get("watercan") if assets else None
+            special = {
+                "pos": [float(gx), float(gy)],
+                "life": random.uniform(10.0, 20.0),
+                "value": random.randint(800, 3500),
+                # default, may be adjusted after surf scaling
+                "click_radius": 18,
+                "surf": None,
+            }
+            if gsurf:
+                # cap visual size so it doesn't dominate the screen
+                max_dim = 64
+                gw, gh = gsurf.get_width(), gsurf.get_height()
+                scale = min(0.8, max_dim / max(gw, gh)) if max(gw, gh) > 0 else 0.8
+                new_w = max(8, int(gw * scale))
+                new_h = max(8, int(gh * scale))
+                special["surf"] = pygame.transform.smoothscale(gsurf, (new_w, new_h))
+                # adjust click radius to match sprite size
+                special["click_radius"] = max(18, int(max(new_w, new_h) / 2) + 4)
+            # add bobbing/oscillation params for animation
+            special["osc_amp"] = random.uniform(4.0, 10.0)
+            special["osc_speed"] = random.uniform(0.8, 1.8)
+            special["osc_phase"] = random.uniform(0.0, math.pi * 2)
+            # horizontal sway parameters (left-right motion)
+            special["sway_amp"] = random.uniform(6.0, 18.0)
+            special["sway_speed"] = random.uniform(0.6, 1.6)
+            special["sway_phase"] = random.uniform(0.0, math.pi * 2)
+            # subtle rotation left-right
+            special["rot_amp"] = random.uniform(6.0, 20.0)  # degrees
+            special["rot_speed"] = random.uniform(0.8, 1.6)
+            special["rot_phase"] = random.uniform(0.0, math.pi * 2)
+            specials.append(special)
+
+        # decay life for specials
+        for s in list(specials):
+            s["life"] -= dt
+            if s["life"] <= 0:
+                try:
+                    specials.remove(s)
+                except Exception:
+                    pass
 
     pygame.quit()
     sys.exit()

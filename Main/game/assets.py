@@ -71,4 +71,15 @@ def load_assets():
     icon_img = pygame.image.load(resource_path(ICON_PATH)).convert_alpha()
     assets["icon"] = icon_img
 
+    # Special collectible image: use the existing `watercan.png` asset.
+    try:
+        wc_rel = os.path.join("Assets", "images", "watercan.png")
+        wc = resource_path(wc_rel)
+        if os.path.exists(wc):
+            assets["watercan"] = pygame.image.load(wc).convert_alpha()
+        else:
+            assets["watercan"] = None
+    except Exception:
+        assets["watercan"] = None
+
     return assets

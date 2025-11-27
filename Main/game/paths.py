@@ -6,7 +6,9 @@ import pygame
 # Bu dosya, projenin ana klasörüne (Main) göre varlıkların göreceli yollarını tanımlar.
 # assets.py dosyasındaki resource_path fonksiyonu, bu yolları çalışma zamanında mutlak yollara dönüştürecektir.
 
-ASSETS_DIR = "assets"
+# Note: the repository uses a capitalized `Assets` folder. Use the exact
+# casing so paths resolve correctly on case-sensitive filesystems (Linux/macOS).
+ASSETS_DIR = "Assets"
 IMAGES_DIR = os.path.join(ASSETS_DIR, "images")
 FONTS_DIR = os.path.join(ASSETS_DIR, "fonts")
 SOUNDS_DIR = os.path.join(ASSETS_DIR, "sounds")
