@@ -354,9 +354,10 @@ def _get_bg_gradient(size):
     if key in _get_bg_gradient.cache:
         return _get_bg_gradient.cache[key]
     surf = pygame.Surface(size)
-    # vertical gradient from darker to lighter
-    top = (12, 28, 18)
-    bottom = (40, 70, 48)
+    # vertical gradient from darker to lighter - Mystic Nature Theme
+    # vertical gradient from darker to lighter - Mystic Nature Theme (Deep Forest)
+    top = (15, 25, 20)
+    bottom = (30, 45, 35)
     for y in range(size[1]):
         t = y / max(1, size[1] - 1)
         col = (
@@ -365,6 +366,20 @@ def _get_bg_gradient(size):
             int(top[2] * (1 - t) + bottom[2] * t),
         )
         pygame.draw.line(surf, col, (0, y), (size[0], y))
+
+    # Simple Vignette (darken corners) - REMOVED per user request
+    # try:
+    #     # Create a radial gradient approximation using a large texture scaled up
+    #     vig_tex = pygame.Surface((100, 100), pygame.SRCALPHA)
+    #     vig_tex.fill((0, 0, 0, 150))  # Dark corners
+    #     # Clear center circle
+    #     pygame.draw.circle(vig_tex, (0, 0, 0, 0), (50, 50), 45)
+    #     # Scale to screen size to create soft blur effect
+    #     vig_scaled = pygame.transform.smoothscale(vig_tex, size)
+    #     surf.blit(vig_scaled, (0, 0))
+    # except Exception:
+    #     pass
+
     _get_bg_gradient.cache[key] = surf
     return surf
 
@@ -505,34 +520,25 @@ def draw_button(
         pygame.draw.rect(
             base_surf, bg_color, pygame.Rect(0, 0, base_w, base_h), border_radius=6
         )
+        # Outline restored (1px) per user request
         pygame.draw.rect(
             base_surf,
             border_color,
             pygame.Rect(0, 0, base_w, base_h),
-            2,
+            1,
             border_radius=6,
         )
         text_surf = font.render(text, True, text_color)
         txt_rect = text_surf.get_rect(center=(base_w // 2, base_h // 2))
         base_surf.blit(text_surf, txt_rect)
 
-        # create a soft drop shadow surface (cached alongside base)
-        shadow = pygame.Surface((base_w + 8, base_h + 8), pygame.SRCALPHA)
-        for i, a in enumerate((48, 32, 20, 12)):
-            pygame.draw.rect(
-                shadow,
-                (0, 0, 0, a),
-                pygame.Rect(i, i, base_w + 8 - i * 2, base_h + 8 - i * 2),
-                border_radius=8,
-            )
-
-        draw_button.button_cache[cache_key] = (base_surf, shadow)
+        draw_button.button_cache[cache_key] = base_surf
     else:
         if isinstance(val, tuple):
-            base_surf, shadow = val
+            # Legacy support if cache has tuple
+            base_surf, _ = val
         else:
             base_surf = val
-            shadow = None
     # press impulse decays quickly
     press_impulse = state.get("press_impulse", 0.0)
     # If previous code set numeric 'press', map it to impulse (backcompat)
@@ -563,22 +569,6 @@ def draw_button(
         except Exception:
             btn_surf = pygame.transform.scale(base_surf, (sw, sh))
 
-    # draw shadow (if cached) beneath the button
-    shadow_surf = None
-    if shadow is not None:
-        try:
-            shadow_surf = pygame.transform.smoothscale(shadow, (sw + 8, sh + 8))
-        except Exception:
-            try:
-                shadow_surf = pygame.transform.scale(shadow, (sw + 8, sh + 8))
-            except Exception:
-                shadow_surf = None
-    if shadow_surf is not None:
-        shadow_rect = shadow_surf.get_rect(center=draw_rect.center)
-        shadow_rect.x += 3
-        shadow_rect.y += 4
-        surface.blit(shadow_surf, shadow_rect.topleft)
-
     surface.blit(btn_surf, draw_rect.topleft)
 
     # compute text_rect for callers (centered on the drawn button)
@@ -588,6 +578,32 @@ def draw_button(
         button_states[effect_name] = state
 
     return text_rect
+
+
+def draw_panel(
+    surface,
+    rect,
+    border_color=(100, 150, 120),
+    bg_color=(30, 40, 35, 230),
+    draw_shadow=True,
+):
+    """Draws a unified panel background with border and shadow."""
+    # Shadow
+    if draw_shadow:
+        shadow_rect = rect.copy()
+        shadow_rect.x += 4
+        shadow_rect.y += 4
+        s = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+        pygame.draw.rect(s, (0, 0, 0, 80), s.get_rect(), border_radius=8)
+        surface.blit(s, (shadow_rect.x, shadow_rect.y))
+
+    # Background
+    bg = pygame.Surface((rect.width, rect.height), pygame.SRCALPHA)
+    pygame.draw.rect(bg, bg_color, bg.get_rect(), border_radius=8)
+    surface.blit(bg, rect.topleft)
+
+    # Border
+    pygame.draw.rect(surface, border_color, rect, 2, border_radius=8)
 
 
 def safe_load_sound(path, default_volume=0.08):
@@ -661,6 +677,21 @@ def run_loop(screen, clock, assets):
     achievements = game_data.get("achievements", {})
     # Initialize achievements if not present
     achievement_defs = {
+        "minigame_first": {"name": "Gamer", "desc": "Play a mini-game", "reward": 500},
+        "minigame_master": {
+            "name": "Pro Gamer",
+            "desc": "Score 100+ in a mini-game",
+            "reward": 2500,
+        },
+        "skill_first": {"name": "Learner", "desc": "Unlock a skill", "reward": 1000},
+        "skill_10": {"name": "Skilled", "desc": "Unlock 10 skills", "reward": 10000},
+        "skill_max": {"name": "Master", "desc": "Max out a skill", "reward": 5000},
+        "wheel_first": {"name": "Lucky Spin", "desc": "Spin the wheel", "reward": 200},
+        "wheel_jackpot": {
+            "name": "Jackpot",
+            "desc": "Hit the jackpot on wheel",
+            "reward": 10000,
+        },
         "first_click": {
             "name": "First Touch",
             "desc": "Click grass once",
@@ -1157,28 +1188,11 @@ def run_loop(screen, clock, assets):
         },
     ]
 
-    # === SEASONAL EVENTS (based on current month) ===
-    current_month = datetime.date.today().month
+    # === SEASONAL EVENTS (DISABLED per user request) ===
+    # current_month = datetime.date.today().month
     seasonal_event = None
     seasonal_multiplier = 1.0
     seasonal_colors = None
-
-    if current_month == 12:  # December - Winter
-        seasonal_event = "Winter Wonderland"
-        seasonal_multiplier = 1.5
-        seasonal_colors = [(200, 220, 255), (150, 180, 220), (100, 150, 200)]
-    elif current_month == 10:  # October - Halloween
-        seasonal_event = "Spooky Season"
-        seasonal_multiplier = 1.3
-        seasonal_colors = [(255, 100, 0), (150, 50, 200), (50, 50, 50)]
-    elif current_month == 4:  # April - Spring
-        seasonal_event = "Spring Bloom"
-        seasonal_multiplier = 1.2
-        seasonal_colors = [(255, 150, 200), (100, 255, 150), (255, 255, 100)]
-    elif current_month == 7 or current_month == 8:  # July/August - Summer
-        seasonal_event = "Summer Heat"
-        seasonal_multiplier = 1.4
-        seasonal_colors = [(255, 200, 50), (255, 150, 50), (255, 100, 50)]
 
     # === ENHANCED VISUAL EFFECTS ===
     rainbow_mode = False
@@ -1588,18 +1602,27 @@ def run_loop(screen, clock, assets):
     save_button_rect = pygame.Rect(0, 0, 0, 0)  # Başlangıçta boş, sonra güncellenecek
     stats_button_rect = pygame.Rect(0, 0, 0, 0)  # Başlangıçta boş, sonra güncellenecek
     shop_button_rect = pygame.Rect(0, 0, 0, 0)  # Başlangıçta boş, sonra güncellenecek
+    # Removed Mini-Games, Skills, Wheel buttons definition
+    # minigame_button_rect = ...
+    # skills_button_rect = ...
+    # wheel_button_rect = ...
 
     # Renk tanımları - Pixel art tarzı için daha canlı renkler
-    BACKGROUND_COLOR = (20, 38, 24)
-    TEXT_COLOR = (240, 240, 240)  # Daha parlak beyaz
-    BUTTON_BORDER_COLOR = (255, 255, 255)
-    AFK_BUTTON_COLOR = (30, 144, 255)  # Mavi
-    MULTIPLIER_BUTTON_COLOR = (14, 176, 14)  # Yeşil
-    SAVE_BUTTON_COLOR = (255, 165, 0)  # Turuncu
-    STATS_BUTTON_COLOR = (138, 43, 226)  # Mor
-    SHOP_BUTTON_COLOR = (255, 105, 180)  # Pembe
-    MONEY_COLOR = (255, 215, 0)  # Altın rengi
-    STATS_COLOR = (200, 200, 200)  # Gri
+    # Renk tanımları - Mystic Nature Theme
+    BACKGROUND_COLOR = (20, 30, 25)  # Deep Forest Green
+    TEXT_COLOR = (240, 255, 245)  # Off-white
+    BUTTON_BORDER_COLOR = (100, 150, 120)
+
+    # Modern Palette
+    AFK_BUTTON_COLOR = (45, 120, 180)  # Muted Blue
+    MULTIPLIER_BUTTON_COLOR = (60, 160, 60)  # Forest Green
+    SAVE_BUTTON_COLOR = (200, 140, 40)  # Amber
+    STATS_BUTTON_COLOR = (120, 60, 180)  # Deep Purple
+    SHOP_BUTTON_COLOR = (200, 80, 120)  # Rose
+
+    MONEY_COLOR = (255, 215, 0)  # Gold
+    STATS_COLOR = (180, 200, 190)  # Sage Grey
+    PANEL_BG_COLOR = (20, 25, 30, 230)  # Clean Dark Slate
 
     # Panel ayarları - Daha geniş panel
     stats_panel_rect = pygame.Rect(10, 10, 235, 182)
@@ -2051,22 +2074,35 @@ def run_loop(screen, clock, assets):
             money += reward
 
         # draw cached gradient background for nicer visuals
-        bg = _get_bg_gradient(SCREEN_SIZE)
-        # NEW: Apply screen shake offset
-        screen.blit(bg, (int(screen_offset[0]), int(screen_offset[1])))
+        # Use a slightly larger size to prevent black edges during screen shake
+        bg_width = SCREEN_SIZE[0] + 60
+        bg_height = SCREEN_SIZE[1] + 60
+        bg = _get_bg_gradient((bg_width, bg_height))
 
-        # İstatistik paneli çizimi - Pixel art tarzı için daha belirgin kenarlar
-        pygame.draw.rect(screen, (40, 58, 44), stats_panel_rect, border_radius=3)
-        pygame.draw.rect(screen, (80, 98, 84), stats_panel_rect, 2, border_radius=3)
+        # Center the background relative to the screen, then apply shake offset
+        bg_x = -30 + int(screen_offset[0])
+        bg_y = -30 + int(screen_offset[1])
+        screen.blit(bg, (bg_x, bg_y))
 
-        ez = SCREEN_SIZE[0] - 132, 558, 35, 35
-
-        pygame.draw.rect(screen, (20, 38, 24), ez, border_radius=3)
+        # İstatistik paneli çizimi - Enhanced
+        draw_panel(
+            screen,
+            stats_panel_rect,
+            border_color=(80, 100, 90),
+            bg_color=(30, 45, 35, 200),
+            draw_shadow=False,
+        )
 
         screen.blit(sound_image, (SCREEN_SIZE[0] - 130, 560))
 
-        pygame.draw.rect(screen, (35, 58, 23), weather_panel_rect, border_radius=3)
-        pygame.draw.rect(screen, (84, 98, 84), weather_panel_rect, 2, border_radius=3)
+        # Weather Panel
+        draw_panel(
+            screen,
+            weather_panel_rect,
+            border_color=(80, 100, 90),
+            bg_color=(35, 50, 40, 200),
+            draw_shadow=False,
+        )
 
         # AFK Gelir butonu çizimi
         padding = 8  # Daha az padding
@@ -2233,29 +2269,6 @@ def run_loop(screen, clock, assets):
 
         # === NEW BUTTONS FOR ENHANCED SYSTEMS ===
 
-        # Mini-Games button
-        minigame_text = "Mini-Games"
-        minigame_text_surf = small_font.render(minigame_text, True, TEXT_COLOR)
-        minigame_text_rect = minigame_text_surf.get_rect()
-        button_width = minigame_text_rect.width + 2 * padding
-        button_height = minigame_text_rect.height + 2 * padding
-        minigame_button_rect = pygame.Rect(0, 0, button_width, button_height)
-        minigame_button_rect.topright = (
-            SCREEN_SIZE[0] - 20,
-            shop_button_rect.bottom + 8,
-        )
-
-        draw_button(
-            screen,
-            minigame_button_rect,
-            (255, 140, 0),  # Orange
-            BUTTON_BORDER_COLOR,
-            minigame_text,
-            small_font,
-            dt,
-            effect_name="minigame",
-        )
-
         # Skill Tree button
         skills_text = f"Skills ({skill_points} SP)"
         skills_text_surf = small_font.render(skills_text, True, TEXT_COLOR)
@@ -2265,41 +2278,18 @@ def run_loop(screen, clock, assets):
         skills_button_rect = pygame.Rect(0, 0, button_width, button_height)
         skills_button_rect.topright = (
             SCREEN_SIZE[0] - 20,
-            minigame_button_rect.bottom + 8,
+            shop_button_rect.bottom + 8,
         )
 
         draw_button(
             screen,
             skills_button_rect,
-            (100, 50, 200),  # Purple
+            (120, 80, 200),  # Mystic Purple
             BUTTON_BORDER_COLOR,
             skills_text,
             small_font,
             dt,
             effect_name="skills",
-        )
-
-        # Lucky Wheel button
-        wheel_text = f"Wheel ({free_spins_today})"
-        wheel_text_surf = small_font.render(wheel_text, True, TEXT_COLOR)
-        wheel_text_rect = wheel_text_surf.get_rect()
-        button_width = wheel_text_rect.width + 2 * padding
-        button_height = wheel_text_rect.height + 2 * padding
-        wheel_button_rect = pygame.Rect(0, 0, button_width, button_height)
-        wheel_button_rect.topright = (
-            SCREEN_SIZE[0] - 20,
-            skills_button_rect.bottom + 8,
-        )
-
-        draw_button(
-            screen,
-            wheel_button_rect,
-            (50, 200, 100),  # Green
-            BUTTON_BORDER_COLOR,
-            wheel_text,
-            small_font,
-            dt,
-            effect_name="wheel",
         )
 
         # Prestige button (if can prestige - money >= 100k)
@@ -2315,7 +2305,7 @@ def run_loop(screen, clock, assets):
             draw_button(
                 screen,
                 prestige_button_rect,
-                (200, 150, 50),  # Gold
+                (210, 180, 60),  # Gold
                 BUTTON_BORDER_COLOR,
                 prestige_text,
                 extra_small_font,
@@ -3137,61 +3127,8 @@ def run_loop(screen, clock, assets):
 
                             y_pos += item_height + 10
 
-                elif show_minigame_menu:
-                    # Minigame Clicks
-                    mg_rect = pygame.Rect(0, 0, 400, 300)
-                    mg_rect.center = (SCREEN_SIZE[0] // 2, SCREEN_SIZE[1] // 2)
-
-                    # 1. Click Frenzy: (50, 70, 300, 50) relative
-                    frenzy_btn = pygame.Rect(mg_rect.x + 50, mg_rect.y + 70, 300, 50)
-                    if frenzy_btn.collidepoint(event.pos):
-                        if minigame_cooldowns["click_frenzy"] <= 0:
-                            # Start Minigame (Placeholder logic or trigger)
-                            add_notification(
-                                notifications, "Click Frenzy Started!", (255, 140, 0)
-                            )
-                            # TODO: Implement minigame start logic if needed, for now just notify
-                            # Based on context, user might expect it to work.
-                            # Assuming minigame logic exists elsewhere?
-                            # The code I read didn't have start logic, maybe I missed it?
-                            # I'll add basic feedback for now.
-                            _safe_play(click_effect)
-                        else:
-                            add_notification(
-                                notifications, "Cooldown Active!", (200, 50, 50)
-                            )
-
-                    # 2. Target Practice: (50, 140, 300, 50)
-                    target_btn = pygame.Rect(mg_rect.x + 50, mg_rect.y + 140, 300, 50)
-                    if target_btn.collidepoint(event.pos):
-                        if minigame_cooldowns["target_practice"] <= 0:
-                            add_notification(
-                                notifications,
-                                "Target Practice Started!",
-                                (50, 100, 200),
-                            )
-                            _safe_play(click_effect)
-                        else:
-                            add_notification(
-                                notifications, "Cooldown Active!", (200, 50, 50)
-                            )
-
-                    # 3. Golden Rush: (50, 210, 300, 50)
-                    gold_btn = pygame.Rect(mg_rect.x + 50, mg_rect.y + 210, 300, 50)
-                    if gold_btn.collidepoint(event.pos):
-                        if minigame_cooldowns["golden_rush"] <= 0:
-                            add_notification(
-                                notifications, "Golden Rush Started!", (215, 180, 50)
-                            )
-                            _safe_play(click_effect)
-                        else:
-                            add_notification(
-                                notifications, "Cooldown Active!", (200, 50, 50)
-                            )
-
-                    # Click outside to close (Optional, but good UX)
-                    if not mg_rect.collidepoint(event.pos):
-                        show_minigame_menu = False
+                # REMOVED: Minigame Menu Logic
+                # elif show_minigame_menu: ...
 
                 elif show_skill_tree:
                     # Skill Tree Clicks
@@ -3249,44 +3186,8 @@ def run_loop(screen, clock, assets):
                     if not st_rect.collidepoint(event.pos):
                         show_skill_tree = False
 
-                elif show_lucky_wheel:
-                    # Wheel Clicks
-                    wh_rect = pygame.Rect(0, 0, 400, 400)
-                    wh_rect.center = (SCREEN_SIZE[0] // 2, SCREEN_SIZE[1] // 2)
-
-                    # Spin Button: (140, 360, 120, 40) relative
-                    spin_btn = pygame.Rect(wh_rect.x + 140, wh_rect.y + 360, 120, 40)
-
-                    if spin_btn.collidepoint(event.pos):
-                        if free_spins_today > 0 and not wheel_spinning:
-                            free_spins_today -= 1
-                            last_spin_date = today
-                            wheel_spinning = True
-                            wheel_speed = random.uniform(400, 600)
-                            _safe_play(click_effect)
-
-                            if not achievements.get("wheel_first", {}).get(
-                                "unlocked", False
-                            ):
-                                money += check_achievement(
-                                    achievements,
-                                    achievement_defs,
-                                    "wheel_first",
-                                    achievement_queue,
-                                    notifications,
-                                    money,
-                                )
-                        elif wheel_spinning:
-                            pass
-                        else:
-                            add_notification(
-                                notifications,
-                                "No free spins! Wait for tomorrow.",
-                                (255, 100, 100),
-                            )
-
-                    if not wh_rect.collidepoint(event.pos):
-                        show_lucky_wheel = False
+                # REMOVED: Lucky Wheel Logic
+                # elif show_lucky_wheel: ...
 
                 # === MAIN MENU BUTTONS ===
                 elif save_button_rect.collidepoint(event.pos):
@@ -3358,19 +3259,8 @@ def run_loop(screen, clock, assets):
 
                 # === NEW BUTTON HANDLERS ===
 
-                elif minigame_button_rect.collidepoint(event.pos):
-                    if current_sound_state == "on":
-                        _safe_set_volume(click_effect, 0.0896705)
-                        _safe_play(click_effect)
-                    button_states.setdefault("minigame", {"hover": 0.0, "press": 0.0})[
-                        "press"
-                    ] = 1.0
-                    spawn_particles(
-                        particles, minigame_button_rect.center, (255, 140, 0), count=15
-                    )
-                    show_minigame_menu = not show_minigame_menu
-                    show_skill_tree = False
-                    show_lucky_wheel = False
+                # REMOVED: Minigame Button Handler
+                # elif minigame_button_rect.collidepoint(event.pos): ...
 
                 elif skills_button_rect.collidepoint(event.pos):
                     if current_sound_state == "on":
@@ -3386,19 +3276,8 @@ def run_loop(screen, clock, assets):
                     show_minigame_menu = False
                     show_lucky_wheel = False
 
-                elif wheel_button_rect.collidepoint(event.pos):
-                    if current_sound_state == "on":
-                        _safe_set_volume(click_effect, 0.0896705)
-                        _safe_play(click_effect)
-                    button_states.setdefault("wheel", {"hover": 0.0, "press": 0.0})[
-                        "press"
-                    ] = 1.0
-                    spawn_particles(
-                        particles, wheel_button_rect.center, (50, 200, 100), count=15
-                    )
-                    show_lucky_wheel = not show_lucky_wheel
-                    show_minigame_menu = False
-                    show_skill_tree = False
+                # REMOVED: Wheel Button Handler
+                # elif wheel_button_rect.collidepoint(event.pos): ...
 
                 elif money >= 100000 and prestige_button_rect.collidepoint(event.pos):
                     # (Rest of prestige logic)
@@ -3917,16 +3796,56 @@ def run_loop(screen, clock, assets):
                         except Exception:
                             # If remove fails, attempt ignore and continue
                             pass
-                        # Oyunu sıfırla
+                        # Oyunu sıfırla - GLOBAL RESET
                         money = 0
                         multiplier = 1
                         auto_income = 0.0
                         total_clicks = 0
-                        afk_upgrade_cost = 200
+                        afk_upgrade_cost = 150
                         multiplier_upgrade_cost = 150
                         highest_money = 0
                         current_grass_index = 0
-                        active_grass_img = grass_images[current_grass_index]
+                        active_grass_img = grass_images[0]
+                        weather_index = 0
+                        combo_count = 0
+                        max_combo = 0
+                        achievements = {}
+                        achievement_queue = []
+                        prestige_level = 0
+                        grass_seeds = 0
+                        special_collected_count = 0
+                        login_streak = 0
+                        critical_hit_count = 0
+                        skill_points = 0
+                        # Reset skills (simple way: lock all)
+                        for s_key in skills:
+                            skills[s_key]["unlocked"] = False
+                        boss_level = 1
+                        boss_defeated_count = 0
+                        stats_data = {}
+                        minigame_high_scores = {
+                            "click_frenzy": 0,
+                            "target_practice": 0,
+                            "golden_rush": 0,
+                        }
+                        minigame_cooldowns = {
+                            "click_frenzy": 0,
+                            "target_practice": 0,
+                            "golden_rush": 0,
+                        }
+
+                        add_notification(
+                            notifications, "Save Wiped! Restarting...", (255, 0, 0)
+                        )
+
+        # Stats Panel Background
+        draw_panel(screen, stats_panel_rect, bg_color=PANEL_BG_COLOR)
+
+        # Weather Panel Background
+        if weather_index != 0:  # Only draw weather panel if weather is active/changed
+            draw_panel(screen, weather_panel_rect, bg_color=PANEL_BG_COLOR)
+        else:
+            draw_panel(screen, weather_panel_rect, bg_color=PANEL_BG_COLOR)
 
         # Para değerini ve diğer bilgileri ekrana yazdır - Yazıların birbirinin içine girmesini önle
         money_text = custom_font.render("$" + str(int(money)), True, MONEY_COLOR)
@@ -4340,81 +4259,43 @@ def run_loop(screen, clock, assets):
                 wheel_speed = 0
                 wheel_spinning = False
                 # Determine result based on angle
+                # Determine result based on angle
                 # 8 segments, 45 degrees each
                 current_angle = wheel_angle % 360
                 segment = int(current_angle // 45)
 
-                # Rewards (Simple logic for now: alternating money/grass)
-                # Segments are likely: 0, 1, 2... 7
-                # We can map them to rewards
-                rewards = [
-                    {
-                        "type": "money",
-                        "val": 5000,
-                        "name": "$5,000",
-                        "color": (255, 215, 0),
-                    },
-                    {
-                        "type": "money",
-                        "val": 1000,
-                        "name": "$1,000",
-                        "color": (200, 200, 200),
-                    },
-                    {
-                        "type": "buff",
-                        "val": "x2_Click",
-                        "name": "2x Click (30s)",
-                        "color": (0, 255, 255),
-                    },
-                    {
-                        "type": "money",
-                        "val": 10000,
-                        "name": "$10,000",
-                        "color": (255, 215, 0),
-                    },
-                    {
-                        "type": "seeds",
-                        "val": 5,
-                        "name": "5 Seeds",
-                        "color": (50, 200, 50),
-                    },
-                    {
-                        "type": "money",
-                        "val": 2500,
-                        "name": "$2,500",
-                        "color": (200, 200, 100),
-                    },
-                    {
-                        "type": "buff",
-                        "val": "x5_Click",
-                        "name": "5x Click (10s)",
-                        "color": (255, 0, 255),
-                    },
-                    {
-                        "type": "jackpot",
-                        "val": 50000,
-                        "name": "JACKPOT!",
-                        "color": (255, 0, 0),
-                    },
-                ]
-
-                # Normalize segment to index (wheel rotates clockwise, so index is effectively reversed)
-                # But for simplicity, let's just pick based on segment
+                # wheel_prizes is defined in init and has 8 items
+                # The wheel rotates clockwise. Index 0 is at 0 degrees (Right).
+                # Segment 0 is 0-45 degrees.
+                # If the pointer is at 0 (Right), and we rotate, the indices pass by.
+                # We need to map segment to index carefully.
+                # Let's assume standard mapping: idx = (8 - segment) % 8
                 idx = (8 - segment) % 8
-                res = rewards[idx]
+                res = wheel_prizes[idx]
                 wheel_result = res
 
                 # Give Reward
                 if res["type"] == "money" or res["type"] == "jackpot":
-                    money += res["val"]
-                elif res["type"] == "seeds":
-                    grass_seeds += res["val"]
-                elif res["type"] == "buff":
-                    # Add buff logic
-                    # For simplicty just give money or handle generic buff
-                    # Ignoring actual buff implementation for now as it requires complex system refactor
-                    # Just giving money equivalent
-                    money += 5000
+                    money += res["value"]
+                elif res["type"] == "money_mult":
+                    # For multiplier, maybe add money or temp buff?
+                    # The definition says value 2, 5, 10.
+                    # Let's give a big money bonus based on current stats
+                    bonus = 1000 * res["value"] * multiplier
+                    money += bonus
+                elif res["type"] == "skill_point":
+                    skill_points += res["value"]
+                elif res["type"] == "powerup":
+                    # Add a powerup
+                    active_powerups.append(
+                        {
+                            "name": "Double AFK",
+                            "type": "afk_boost",
+                            "multiplier": 2.0,
+                            "duration": res["value"],
+                            "color": res["color"],
+                        }
+                    )
 
                 add_notification(notifications, f"Won: {res['name']}", res["color"])
                 _safe_play(buy_effect)
@@ -4501,7 +4382,7 @@ def run_loop(screen, clock, assets):
             save_msg_timer = max(0.0, save_msg_timer - dt)
 
         # spawn/update specials (probabilistic per-second chance)
-        if random.random() < SPAWN_CHANCE_PER_SECOND * dt:
+        if random.random() < 0.013 * dt:
             # spawn a special at a random position near the grass area
             gx = random.randint(120, SCREEN_SIZE[0] - 120)
             gy = random.randint(120, SCREEN_SIZE[1] - 220)
@@ -4705,16 +4586,25 @@ def trigger_screen_shake(intensity, duration):
 def check_achievement(
     achievements, achievement_defs, ach_id, achievement_queue, notifications, money_ref
 ):
-    """Check and unlock an achievement."""
-    if ach_id in achievements and not achievements[ach_id]["unlocked"]:
-        achievements[ach_id]["unlocked"] = True
-        ach_data = achievement_defs[ach_id]
-        achievement_queue.append(ach_data)
-        add_notification(
-            notifications, f"Achievement: {ach_data['name']}!", (255, 215, 0)
-        )
-        return ach_data["reward"]
-    return 0
+    """Check and unlock an achievement. Auto-initializes missing IDs."""
+    # Ensure the achievement exists in the tracking dict
+    if ach_id not in achievements:
+        achievements[ach_id] = {"unlocked": False, "progress": 0}
+
+    # If already unlocked, skip
+    if achievements[ach_id].get("unlocked", False):
+        return 0
+
+    # Check if definition exists
+    if ach_id not in achievement_defs:
+        return 0  # No definition, can't unlock
+
+    # Unlock!
+    achievements[ach_id]["unlocked"] = True
+    ach_data = achievement_defs[ach_id]
+    achievement_queue.append(ach_data)
+    add_notification(notifications, f"Achievement: {ach_data['name']}!", (255, 215, 0))
+    return ach_data.get("reward", 0)
 
 
 def draw_achievement_popup(surface, achievement_data, timer, font, small_font):
@@ -4767,17 +4657,17 @@ def draw_achievement_popup(surface, achievement_data, timer, font, small_font):
 
 
 def get_combo_multiplier(combo_count):
-    """Calculate combo multiplier based on combo count."""
-    if combo_count < 5:
+    """Calculate combo multiplier based on combo count. (Nerfed for balance)"""
+    if combo_count < 10:
         return 1.0
-    elif combo_count < 10:
-        return 1.5
     elif combo_count < 25:
-        return 2.0
+        return 1.05
     elif combo_count < 50:
-        return 3.0
+        return 1.1
+    elif combo_count < 100:
+        return 1.15
     else:
-        return 5.0
+        return 1.2
 
 
 def draw_combo_meter(surface, combo_count, combo_timer, combo_timeout, font, pos):
