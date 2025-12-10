@@ -1,12 +1,19 @@
-# Build directory
+
 /build\TouchTheGrass
 /build\TouchTheGrass.exe
 /build\TouchTheGrass.pdb
 /build/
 ../build
-# Dependency directories
+
 /node_modules/
 /vendor/
-# Logs
+
+# AI and GitHub folders
+/.github/
+/.agent/
+
+
+
+
 
     
