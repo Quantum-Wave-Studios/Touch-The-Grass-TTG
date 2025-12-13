@@ -3,6 +3,8 @@ ___
 
 ##### Quantum Wave Studios is owned by "**MrTarik2112**".
 
+### itch.io site "https://mrtarik2112.itch.io/ttg"
+
 ___
 
 
