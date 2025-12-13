@@ -677,77 +677,77 @@ def run_loop(screen, clock, assets):
     achievements = game_data.get("achievements", {})
     # Initialize achievements if not present
     achievement_defs = {
-        "minigame_first": {"name": "Gamer", "desc": "Play a mini-game", "reward": 500},
+        "minigame_first": {"name": "Gamer", "desc": "Play a mini-game", "reward": 100},
         "minigame_master": {
             "name": "Pro Gamer",
             "desc": "Score 100+ in a mini-game",
-            "reward": 2500,
+            "reward": 500,
         },
-        "skill_first": {"name": "Learner", "desc": "Unlock a skill", "reward": 1000},
-        "skill_10": {"name": "Skilled", "desc": "Unlock 10 skills", "reward": 10000},
-        "skill_max": {"name": "Master", "desc": "Max out a skill", "reward": 5000},
-        "wheel_first": {"name": "Lucky Spin", "desc": "Spin the wheel", "reward": 200},
+        "skill_first": {"name": "Learner", "desc": "Unlock a skill", "reward": 200},
+        "skill_10": {"name": "Skilled", "desc": "Unlock 10 skills", "reward": 2000},
+        "skill_max": {"name": "Master", "desc": "Max out a skill", "reward": 1000},
+        "wheel_first": {"name": "Lucky Spin", "desc": "Spin the wheel", "reward": 50},
         "wheel_jackpot": {
             "name": "Jackpot",
             "desc": "Hit the jackpot on wheel",
-            "reward": 10000,
+            "reward": 2000,
         },
         "first_click": {
             "name": "First Touch",
             "desc": "Click grass once",
-            "reward": 10,
+            "reward": 2,
         },
         "click_100": {
             "name": "Getting Started",
             "desc": "Click 100 times",
-            "reward": 100,
+            "reward": 25,
         },
         "click_1000": {
             "name": "Dedicated Clicker",
             "desc": "Click 1000 times",
-            "reward": 500,
+            "reward": 100,
         },
         "click_10000": {
             "name": "Click Master",
             "desc": "Click 10000 times",
-            "reward": 5000,
+            "reward": 1000,
         },
-        "money_1k": {"name": "First Thousand", "desc": "Earn $1,000", "reward": 50},
-        "money_10k": {"name": "Big Earner", "desc": "Earn $10,000", "reward": 500},
-        "money_100k": {"name": "Wealthy", "desc": "Earn $100,000", "reward": 5000},
-        "money_1m": {"name": "Millionaire", "desc": "Earn $1,000,000", "reward": 50000},
-        "combo_10": {"name": "Combo Starter", "desc": "Reach 10x combo", "reward": 200},
-        "combo_25": {"name": "Combo Expert", "desc": "Reach 25x combo", "reward": 1000},
-        "combo_50": {"name": "Combo Master", "desc": "Reach 50x combo", "reward": 5000},
+        "money_1k": {"name": "First Thousand", "desc": "Earn $1,000", "reward": 10},
+        "money_10k": {"name": "Big Earner", "desc": "Earn $10,000", "reward": 100},
+        "money_100k": {"name": "Wealthy", "desc": "Earn $100,000", "reward": 1000},
+        "money_1m": {"name": "Millionaire", "desc": "Earn $1,000,000", "reward": 10000},
+        "combo_10": {"name": "Combo Starter", "desc": "Reach 10x combo", "reward": 50},
+        "combo_25": {"name": "Combo Expert", "desc": "Reach 25x combo", "reward": 200},
+        "combo_50": {"name": "Combo Master", "desc": "Reach 50x combo", "reward": 1000},
         "upgrade_afk": {
             "name": "Passive Income",
             "desc": "Buy first AFK upgrade",
-            "reward": 100,
+            "reward": 25,
         },
         "upgrade_mult": {
             "name": "Power Up",
             "desc": "Buy first multiplier upgrade",
-            "reward": 100,
+            "reward": 25,
         },
         "buy_grass": {
             "name": "New Grass",
             "desc": "Buy a new grass type",
-            "reward": 500,
+            "reward": 100,
         },
         "all_grass": {
             "name": "Grass Collector",
             "desc": "Own all grass types",
-            "reward": 10000,
+            "reward": 2000,
         },
         "special_collect": {
             "name": "Lucky Find",
             "desc": "Collect a special item",
-            "reward": 200,
+            "reward": 50,
         },
         "special_10": {
             "name": "Collector",
             "desc": "Collect 10 special items",
-            "reward": 2000,
+            "reward": 400,
         },
         "prestige_1": {
             "name": "Rebirth",
@@ -757,12 +757,12 @@ def run_loop(screen, clock, assets):
         "daily_7": {
             "name": "Week Warrior",
             "desc": "Login 7 days in a row",
-            "reward": 5000,
+            "reward": 1000,
         },
         "powerup_collect": {
             "name": "Power Player",
             "desc": "Collect a power-up",
-            "reward": 300,
+            "reward": 75,
         },
     }
 
@@ -787,7 +787,7 @@ def run_loop(screen, clock, assets):
         achievement_defs[f"clicks_{milestone}"] = {
             "name": f"Click Master {i+1}",
             "desc": f"Click {milestone:,} times",
-            "reward": milestone // 10,
+            "reward": milestone // 50,
         }
 
     # Money milestones: 1k, 10k, ... 1T
@@ -807,7 +807,7 @@ def run_loop(screen, clock, assets):
         achievement_defs[f"money_prog_{milestone}"] = {
             "name": f"Tycoon {i+1}",
             "desc": f"Earn ${milestone:,}",
-            "reward": milestone // 20,
+            "reward": milestone // 100,
         }
 
     # Playtime: 1m, 5m, 10m, 30m, 1h, 5h, 10h, 24h, 100h
@@ -817,16 +817,7 @@ def run_loop(screen, clock, assets):
         achievement_defs[f"time_{seconds}"] = {
             "name": f"Dedicated {i+1}",
             "desc": f"Play for {hours:.1f} hours",
-            "reward": 1000 * (i + 1),
-        }
-
-    # Boss kills: 1, 5, 10, 25, 50, 100
-    boss_milestones = [1, 5, 10, 25, 50, 100]
-    for i, count in enumerate(boss_milestones):
-        achievement_defs[f"boss_kill_{count}"] = {
-            "name": f"Boss Slayer {i+1}",
-            "desc": f"Defeat {count} bosses",
-            "reward": 5000 * (i + 1),
+            "reward": 200 * (i + 1),
         }
 
     # Combo: 10, 20, 50, 100, 250, 500
@@ -835,7 +826,7 @@ def run_loop(screen, clock, assets):
         achievement_defs[f"combo_prog_{count}"] = {
             "name": f"Combo King {i+1}",
             "desc": f"Reach {count}x combo",
-            "reward": 200 * count,
+            "reward": 50 * count,
         }
 
     for ach_id, ach_data in achievement_defs.items():
@@ -990,6 +981,7 @@ def run_loop(screen, clock, assets):
                 "effect": 0.1,
                 "name": "Strong Fingers",
                 "desc": "+10% click power per level",
+                "type": "click_mult",
             },
             "click_power_2": {
                 "level": 0,
@@ -999,6 +991,7 @@ def run_loop(screen, clock, assets):
                 "name": "Iron Grip",
                 "desc": "+25% click power per level",
                 "req": "click_power_1",
+                "type": "click_mult",
             },
             "click_power_3": {
                 "level": 0,
@@ -1008,6 +1001,7 @@ def run_loop(screen, clock, assets):
                 "name": "Diamond Touch",
                 "desc": "+50% click power per level",
                 "req": "click_power_2",
+                "type": "click_mult",
             },
             # AFK Branch
             "afk_power_1": {
@@ -1017,6 +1011,7 @@ def run_loop(screen, clock, assets):
                 "effect": 0.15,
                 "name": "Patience",
                 "desc": "+15% AFK income per level",
+                "type": "afk_mult",
             },
             "afk_power_2": {
                 "level": 0,
@@ -1026,6 +1021,7 @@ def run_loop(screen, clock, assets):
                 "name": "Meditation",
                 "desc": "+30% AFK income per level",
                 "req": "afk_power_1",
+                "type": "afk_mult",
             },
             "afk_power_3": {
                 "level": 0,
@@ -1035,6 +1031,7 @@ def run_loop(screen, clock, assets):
                 "name": "Zen Master",
                 "desc": "+50% AFK income per level",
                 "req": "afk_power_2",
+                "type": "afk_mult",
             },
             # Luck Branch
             "luck_1": {
@@ -1044,6 +1041,7 @@ def run_loop(screen, clock, assets):
                 "effect": 0.02,
                 "name": "Lucky",
                 "desc": "+2% critical chance per level",
+                "type": "crit_chance",
             },
             "luck_2": {
                 "level": 0,
@@ -1053,6 +1051,7 @@ def run_loop(screen, clock, assets):
                 "name": "Fortune",
                 "desc": "+0.5x critical multiplier per level",
                 "req": "luck_1",
+                "type": "crit_mult",
             },
             "luck_3": {
                 "level": 0,
@@ -1062,6 +1061,7 @@ def run_loop(screen, clock, assets):
                 "name": "Golden Touch",
                 "desc": "+10% special spawn rate per level",
                 "req": "luck_2",
+                "type": "special_rate",
             },
             # Combo Branch
             "combo_1": {
@@ -1071,6 +1071,7 @@ def run_loop(screen, clock, assets):
                 "effect": 0.05,
                 "name": "Quick Hands",
                 "desc": "+0.05s combo timeout per level",
+                "type": "combo_timeout",
             },
             "combo_2": {
                 "level": 0,
@@ -1080,6 +1081,7 @@ def run_loop(screen, clock, assets):
                 "name": "Combo King",
                 "desc": "+10% combo multiplier per level",
                 "req": "combo_1",
+                "type": "combo_mult",
             },
         },
     )
@@ -1089,52 +1091,13 @@ def run_loop(screen, clock, assets):
         skill = skills_dict.get(skill_id, {})
         return skill.get("level", 0) * skill.get("effect", 0)
 
-    # === BOSS BATTLE SYSTEM ===
-    show_boss = False
+    # === BOSS BATTLE SYSTEM (Disabled - kept for save compatibility) ===
     boss_active = False
     boss_hp = 0
     boss_max_hp = 0
-    boss_timer = 0.0
-    boss_spawn_timer = game_data.get("boss_spawn_timer", 300.0)  # 5 minutes
-    BOSS_SPAWN_INTERVAL = 300.0  # 5 minutes
+    boss_spawn_timer = 999999.0  # Effectively disabled
     boss_level = game_data.get("boss_level", 1)
     boss_defeated_count = game_data.get("boss_defeated_count", 0)
-    boss_animation_timer = 0.0
-    boss_hit_flash = 0.0
-
-    # Boss types with different stats
-    boss_types = [
-        {
-            "name": "Grass Golem",
-            "hp_mult": 1.0,
-            "reward_mult": 1.0,
-            "color": (100, 180, 100),
-        },
-        {
-            "name": "Stone Giant",
-            "hp_mult": 1.5,
-            "reward_mult": 1.3,
-            "color": (150, 150, 150),
-        },
-        {
-            "name": "Crystal Titan",
-            "hp_mult": 2.0,
-            "reward_mult": 1.6,
-            "color": (100, 200, 255),
-        },
-        {
-            "name": "Shadow Beast",
-            "hp_mult": 2.5,
-            "reward_mult": 2.0,
-            "color": (80, 50, 100),
-        },
-        {
-            "name": "Golden Dragon",
-            "hp_mult": 3.0,
-            "reward_mult": 3.0,
-            "color": (255, 200, 50),
-        },
-    ]
     current_boss_type = None
 
     # === LUCKY WHEEL SYSTEM ===
@@ -1226,89 +1189,57 @@ def run_loop(screen, clock, assets):
         "click_100k": {
             "name": "Click Legend",
             "desc": "Click 100,000 times",
-            "reward": 25000,
+            "reward": 5000,
             "tier": "gold",
         },
         "click_1m": {
             "name": "Click God",
             "desc": "Click 1,000,000 times",
-            "reward": 500000,
+            "reward": 100000,
             "tier": "platinum",
         },
         # Money milestones
         "money_10m": {
             "name": "Multi-Millionaire",
             "desc": "Earn $10,000,000",
-            "reward": 500000,
+            "reward": 100000,
             "tier": "platinum",
         },
         "money_100m": {
             "name": "Billionaire",
             "desc": "Earn $100,000,000",
-            "reward": 5000000,
+            "reward": 1000000,
             "tier": "diamond",
         },
         # Combo achievements
         "combo_100": {
             "name": "Combo Legend",
             "desc": "Reach 100x combo",
-            "reward": 25000,
+            "reward": 5000,
             "tier": "gold",
         },
         "combo_200": {
             "name": "Combo God",
             "desc": "Reach 200x combo",
-            "reward": 100000,
+            "reward": 20000,
             "tier": "platinum",
         },
         # Critical hit achievements
         "crit_first": {
             "name": "Critical Start",
             "desc": "Get first critical hit",
-            "reward": 100,
+            "reward": 25,
             "tier": "bronze",
         },
         "crit_100": {
             "name": "Critical Expert",
             "desc": "Get 100 critical hits",
-            "reward": 5000,
+            "reward": 1000,
             "tier": "silver",
         },
         "crit_1000": {
             "name": "Critical Master",
             "desc": "Get 1000 critical hits",
-            "reward": 50000,
-            "tier": "gold",
-        },
-        # Boss achievements
-        "boss_first": {
-            "name": "Boss Slayer",
-            "desc": "Defeat first boss",
-            "reward": 5000,
-            "tier": "silver",
-        },
-        "boss_10": {
-            "name": "Boss Hunter",
-            "desc": "Defeat 10 bosses",
-            "reward": 25000,
-            "tier": "gold",
-        },
-        "boss_50": {
-            "name": "Boss Destroyer",
-            "desc": "Defeat 50 bosses",
-            "reward": 100000,
-            "tier": "platinum",
-        },
-        # Mini-game achievements
-        "minigame_first": {
-            "name": "Game On",
-            "desc": "Play first mini-game",
-            "reward": 500,
-            "tier": "bronze",
-        },
-        "minigame_master": {
-            "name": "Mini Master",
-            "desc": "Score 100+ in any mini-game",
             "reward": 10000,
             "tier": "gold",
         },
@@ -1316,78 +1247,78 @@ def run_loop(screen, clock, assets):
         "skill_first": {
             "name": "Learner",
             "desc": "Unlock first skill",
-            "reward": 500,
+            "reward": 100,
             "tier": "bronze",
         },
         "skill_10": {
             "name": "Skilled",
             "desc": "Unlock 10 skills",
-            "reward": 5000,
+            "reward": 1000,
             "tier": "silver",
         },
         "skill_max": {
             "name": "Master of All",
             "desc": "Max out a skill branch",
-            "reward": 50000,
+            "reward": 10000,
             "tier": "gold",
         },
         # Wheel achievements
         "wheel_first": {
             "name": "Lucky Spinner",
             "desc": "Spin the wheel",
-            "reward": 200,
+            "reward": 50,
             "tier": "bronze",
         },
         "wheel_jackpot": {
             "name": "Jackpot!",
             "desc": "Win 10x on wheel",
-            "reward": 25000,
+            "reward": 5000,
             "tier": "gold",
         },
         # Prestige achievements
         "prestige_5": {
             "name": "Transcendent",
             "desc": "Reach prestige 5",
-            "reward": 50000,
+            "reward": 10000,
             "tier": "gold",
         },
         "prestige_10": {
             "name": "Eternal",
             "desc": "Reach prestige 10",
-            "reward": 250000,
+            "reward": 50000,
             "tier": "platinum",
         },
         # Time achievements
         "playtime_1h": {
             "name": "Dedicated",
             "desc": "Play for 1 hour total",
-            "reward": 1000,
+            "reward": 200,
             "tier": "bronze",
         },
         "playtime_10h": {
             "name": "Committed",
             "desc": "Play for 10 hours total",
-            "reward": 25000,
+            "reward": 5000,
             "tier": "gold",
         },
         # Login achievements
         "daily_30": {
             "name": "Monthly Warrior",
             "desc": "Login 30 days in a row",
-            "reward": 50000,
+            "reward": 10000,
             "tier": "gold",
         },
         # Secret achievements
         "secret_1": {
             "name": "???",
             "desc": "Secret achievement",
-            "reward": 10000,
+            "reward": 2000,
             "tier": "secret",
         },
         "secret_2": {
             "name": "???",
             "desc": "Secret achievement",
-            "reward": 50000,
+            "reward": 10000,
             "tier": "secret",
         },
     }
@@ -2292,6 +2223,29 @@ def run_loop(screen, clock, assets):
             effect_name="skills",
         )
 
+        # Lucky Wheel button
+        wheel_text = "Lucky Wheel"
+        wheel_text_surf = small_font.render(wheel_text, True, TEXT_COLOR)
+        wheel_text_rect = wheel_text_surf.get_rect()
+        button_width = wheel_text_rect.width + 2 * padding
+        button_height = wheel_text_rect.height + 2 * padding
+        wheel_button_rect = pygame.Rect(0, 0, button_width, button_height)
+        wheel_button_rect.topright = (
+            SCREEN_SIZE[0] - 20,
+            skills_button_rect.bottom + 8,
+        )
+
+        draw_button(
+            screen,
+            wheel_button_rect,
+            (255, 215, 0),  # Gold
+            BUTTON_BORDER_COLOR,
+            wheel_text,
+            small_font,
+            dt,
+            effect_name="wheel",
+        )
+
         # Prestige button (if can prestige - money >= 100k)
         if money >= 100000:
             prestige_text = "PRESTIGE"
@@ -2362,6 +2316,9 @@ def run_loop(screen, clock, assets):
             or save_button_rect.collidepoint(mouse_pos)
             or stats_button_rect.collidepoint(mouse_pos)
             or shop_button_rect.collidepoint(mouse_pos)
+            or skills_button_rect.collidepoint(mouse_pos)
+            or wheel_button_rect.collidepoint(mouse_pos)
+            or (money >= 100000 and prestige_button_rect.collidepoint(mouse_pos))
             or wipe_button_rect.collidepoint(mouse_pos)
             or grass_rect.collidepoint(mouse_pos)
             or sound_button.collidepoint(mouse_pos)
@@ -2797,6 +2754,8 @@ def run_loop(screen, clock, assets):
                         "last_login_date": today,
                         "login_streak": login_streak,
                         "settings": settings,
+                        "skills": skills,
+                        "skill_points": skill_points,
                     }
                 )
                 running = False
@@ -3186,8 +3145,29 @@ def run_loop(screen, clock, assets):
                     if not st_rect.collidepoint(event.pos):
                         show_skill_tree = False
 
-                # REMOVED: Lucky Wheel Logic
-                # elif show_lucky_wheel: ...
+                elif show_lucky_wheel:
+                    # Recompute Wheel Rects
+                    wh_rect = pygame.Rect(0, 0, 400, 400)
+                    wh_rect.center = (SCREEN_SIZE[0] // 2, SCREEN_SIZE[1] // 2)
+
+                    # Spin Button (140, 360, 120, 40) relative to surface
+                    spin_rect = pygame.Rect(140, 360, 120, 40)
+                    spin_rect.x += wh_rect.x
+                    spin_rect.y += wh_rect.y
+
+                    if spin_rect.collidepoint(event.pos):
+                        if not wheel_spinning and free_spins_today > 0:
+                            wheel_spinning = True
+                            wheel_speed = random.uniform(600, 900)
+                            wheel_result = None
+                            free_spins_today -= 1
+                            # Update save data for free spins
+                            game_data["free_spins_today"] = free_spins_today
+                            game_data["last_spin_date"] = today
+                            _safe_play(click_effect)
+                    elif not wh_rect.collidepoint(event.pos):
+                        # Click outside to close
+                        show_lucky_wheel = False
 
                 # === MAIN MENU BUTTONS ===
                 elif save_button_rect.collidepoint(event.pos):
@@ -3225,6 +3205,8 @@ def run_loop(screen, clock, assets):
                             "last_login_date": today,
                             "login_streak": login_streak,
                             "settings": settings,
+                            "skills": skills,
+                            "skill_points": skill_points,
                         }
                     )
                     # Non-blocking save confirmation
@@ -3276,8 +3258,21 @@ def run_loop(screen, clock, assets):
                     show_minigame_menu = False
                     show_lucky_wheel = False
 
-                # REMOVED: Wheel Button Handler
-                # elif wheel_button_rect.collidepoint(event.pos): ...
+                elif wheel_button_rect.collidepoint(event.pos):
+                    if current_sound_state == "on":
+                        _safe_set_volume(click_effect, 0.0896705)
+                        _safe_play(click_effect)
+                    button_states.setdefault("wheel", {"hover": 0.0, "press": 0.0})[
+                        "press"
+                    ] = 1.0
+                    spawn_particles(
+                        particles, wheel_button_rect.center, (255, 215, 0), count=15
+                    )
+                    show_lucky_wheel = not show_lucky_wheel
+                    show_skill_tree = False
+                    show_minigame_menu = False
+                    show_shop = False
+                    show_stats = False
 
                 elif money >= 100000 and prestige_button_rect.collidepoint(event.pos):
                     # (Rest of prestige logic)
@@ -4321,14 +4316,54 @@ def run_loop(screen, clock, assets):
                 wh_surf, (200, 200, 200), (center_x, center_y), radius + 5
             )
 
-            # Segments (simplified visualization)
+            # Segments with text
             for i in range(8):
-                angle = i * (360 / 8) + wheel_angle
-                rad_angle = math.radians(angle)
-                end_x = center_x + radius * math.cos(rad_angle)
-                end_y = center_y + radius * math.sin(rad_angle)
-                pygame.draw.line(
-                    wh_surf, (100, 100, 100), (center_x, center_y), (end_x, end_y), 2
+                prize = wheel_prizes[i]
+                start_angle = i * 45 + wheel_angle
+
+                # Draw filled sector (polygon)
+                points = [(center_x, center_y)]
+                for k in range(5):
+                    sub_a = start_angle + k * (45 / 4)
+                    rad_a = math.radians(sub_a)
+                    px = center_x + radius * math.cos(rad_a)
+                    py = center_y + radius * math.sin(rad_a)
+                    points.append((px, py))
+
+                p_col = prize.get("color", (100, 100, 100))
+                pygame.draw.polygon(wh_surf, p_col, points)
+                pygame.draw.polygon(wh_surf, (40, 40, 40), points, 2)
+
+                # Draw text
+                mid_angle = start_angle + 22.5
+                rad_mid = math.radians(mid_angle)
+                dist = radius * 0.7
+                tx = center_x + dist * math.cos(rad_mid)
+                ty = center_y + dist * math.sin(rad_mid)
+
+                # Prepare short text
+                txt = prize["name"]
+                txt = txt.replace("Money", "").replace("Click Power", "Pow").strip()
+                if txt.startswith("+$"):
+                    txt = txt[1:]
+
+                # Text shadow (black) + Text (white)
+                t_shad = extra_small_font.render(txt, True, (0, 0, 0))
+                t_surf = extra_small_font.render(txt, True, (255, 255, 255))
+
+                t_r_shad = pygame.transform.rotate(t_shad, -mid_angle)
+                t_r = pygame.transform.rotate(t_surf, -mid_angle)
+
+                # Centered blit
+                wh_surf.blit(
+                    t_r_shad,
+                    (
+                        tx - t_r_shad.get_width() // 2 + 1,
+                        ty - t_r_shad.get_height() // 2 + 1,
+                    ),
+                )
+                wh_surf.blit(
+                    t_r, (tx - t_r.get_width() // 2, ty - t_r.get_height() // 2)
                 )
 
             # Spin Button
