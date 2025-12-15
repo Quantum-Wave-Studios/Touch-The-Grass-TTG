@@ -1,0 +1,24 @@
+# game/paths.py
+import os
+
+import pygame
+
+# Bu dosya, projenin ana klasörüne (Main) göre varlıkların göreceli yollarını tanımlar.
+# assets.py dosyasındaki resource_path fonksiyonu, bu yolları çalışma zamanında mutlak yollara dönüştürecektir.
+
+# Note: the repository uses a capitalized `Assets` folder. Use the exact
+# casing so paths resolve correctly on case-sensitive filesystems (Linux/macOS).
+ASSETS_DIR = "Assets"
+IMAGES_DIR = os.path.join(ASSETS_DIR, "images")
+FONTS_DIR = os.path.join(ASSETS_DIR, "fonts")
+SOUNDS_DIR = os.path.join(ASSETS_DIR, "sounds")
+
+# Varlık dosyalarının yolları
+CUSTOM_FONT_PATH = os.path.join(FONTS_DIR, "PixelifySans-Regular.ttf")
+GRASS1_IMG_PATH = os.path.join(IMAGES_DIR, "grass1.png")
+ICON_PATH = os.path.join(IMAGES_DIR, "icon.ico")
+CLICK_SOUND_PATH = os.path.join(SOUNDS_DIR, "click.mp3")
+BACK_SOUND_PATH = os.path.join(SOUNDS_DIR, "back.mp3")
+
+
+
